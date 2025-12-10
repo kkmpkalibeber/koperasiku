@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Koperasi Sekolah — Aplikasi</title>
+<style>
+  :root{--accent:#0b63d7;--bg:#f4f7fb;--card:#fff;--muted:#6b7280;}
+  body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;margin:0;background:var(--bg);color:#0b1a2b;}
+  .app{display:flex;min-height:100vh;}
+  .sidebar{width:240px;background:linear-gradient(180deg,#06283D,#0b63d7);color:#fff;padding:24px;box-sizing:border-box;}
+  .brand{font-weight:700;font-size:18px;margin-bottom:8px;}
+  .menu button{display:block;width:100%;text-align:left;padding:10px;border-radius:8px;border:none;background:transparent;color:#fff;margin-bottom:6px;cursor:pointer;}
+  .menu button.active{background:rgba(255,255,255,0.06);}
+  .main{flex:1;padding:20px;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+  .card{background:var(--card);border-radius:10px;padding:16px;box-shadow:0 6px 18px rgba(15,23,42,0.06);margin-bottom:16px;}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+  .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;}
+  .btn.ghost{background:transparent;border:1px solid rgba(11,94,215,0.12);color:var(--accent);}
+  table{width:100%;border-collapse:collapse;}
+  th,td{padding:8px 10px;border-bottom:1px solid #eef2f7;text-align:left;font-size:14px;}
+  th{font-weight:700;background:linear-gradient(90deg, rgba(11,94,215,0.04), transparent);}
+  tr:nth-child(even) td{background:#fbfdff;}
+  .form-row{display:flex;gap:10px;margin-bottom:10px;}
+  input,select,textarea{padding:8px;border-radius:8px;border:1px solid #e6eef7;}
+  .small{font-size:13px;color:var(--muted);}
+  @media(max-width:900px){ .sidebar{display:none;} .grid{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">Koperasi Sekolah</div>
+    <div class="small">Kelola anggota, transaksi, jurnal & laporan</div>
+    <nav class="menu" id="menu">
+      <button data-page="dashboard" class="active">Dashboard</button>
+      <button data-page="anggota">Master Anggota</button>
+      <button data-page="jenis">Master Jenis Transaksi</button>
+      <button data-page="transaksi">Transaksi</button>
+      <button data-page="jurnal">Jurnal Umum</button>
+      <button data-page="laporan">Laporan Periode</button>
+    </nav>
+    <div style="position:absolute;bottom:18px;left:24px;right:24px;" class="small">Deploy Web App & ganti URL di pengaturan.</div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h2 id="page-title">Login</h2>
+        <div id="user-welcome" class="small" style="display:none;">Selamat datang, <span id="user-name"></span></div>
+      </div>
+      <div class="right">
+        <button id="refreshBtn" class="btn">Refresh</button>
+      </div>
+    </div>
+
+    <div id="content">
+      <!-- LOGIN -->
+      <div id="page-login" class="card">
+        <h3>Login</h3>
+        <div class="form-row">
+          <input id="login-username" placeholder="username (default: admin)" />
+          <input id="login-password" type="password" placeholder="password (default: 123)" />
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" onclick="doLogin()">Masuk</button>
+          <button class="btn ghost" onclick="fillDemo()">Isi Demo</button>
+        </div>
+        <div id="login-msg" class="small" style="margin-top:8px;color:#a00;"></div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page" style="display:none;">
+        <div class="grid">
+          <div class="card">
+            <h3>Ringkasan</h3>
+            <div id="summary" class="small">Memuat...</div>
+          </div>
+          <div class="card">
+            <h3>Saldo Per Anggota</h3>
+            <div id="saldo-list" style="max-height:240px;overflow:auto;">Memuat...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MASTER ANGGOTA -->
+      <div id="page-anggota" class="page" style="display:none;">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3>Master Anggota</h3>
+            <button class="btn" onclick="showAnggotaForm()">Tambah Anggota</button>
+          </div>
+
+          <div id="anggota-form" style="margin-top:12px;display:none;">
+            <div class="card">
+              <h4 id="anggota-title">Tambah Anggota</h4>
+              <div class="form-row">
+                <input id="anggota-nama" placeholder="Nama" />
+                <input id="anggota-nohp" placeholder="No. HP" />
+              </div>
+              <div class="form-row">
+                <input id="anggota-alamat" placeholder="Alamat" />
+                <div style="width:150px;"><button class="btn" onclick="saveAnggota()" id="btn-save-anggota">Simpan</button></div>
+              </div>
+              <input type="hidden" id="anggota-id" />
+            </div>
+          </div>
+
+          <div style="margin-top:12px;overflow:auto;">
+            <table id="anggota-table">
+              <thead><tr><th>Nama</th><th>No HP</th><th>Alamat</th><th>Aksi</th></tr></thead>
+              <tbody><tr><td colspan="4" class="small">Memuat...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- MASTER JENIS -->
+      <div id="page-jenis" class="page" style="display:none;">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3>Master Jenis Transaksi</h3>
+            <button class="btn" onclick="showJenisForm()">Tambah Jenis</button>
+          </div>
+
+          <div id="jenis-form" style="margin-top:12px;display:none;">
+            <div class="card">
+              <h4 id="jenis-title">Tambah Jenis</h4>
+              <div class="form-row">
+                <input id="jenis-nama" placeholder="Nama Jenis" />
+                <select id="jenis-kategori"><option value="masuk">Masuk</option><option value="keluar">Keluar</option></select>
+              </div>
+              <div style="margin-top:8px;"><button class="btn" onclick="saveJenis()">Simpan</button> <button class="btn ghost" onclick="hideJenisForm()">Batal</button></div>
+              <input type="hidden" id="jenis-id" />
+            </div>
+          </div>
+
+          <div style="margin-top:12px;overflow:auto;">
+            <table id="jenis-table">
+              <thead><tr><th>Nama Jenis</th><th>Kategori</th><th>Aksi</th></tr></thead>
+              <tbody><tr><td colspan="3" class="small">Memuat...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRANSAKSI -->
+      <div id="page-transaksi" class="page" style="display:none;">
+        <div class="card">
+          <h3>Transaksi</h3>
+          <div class="card" style="margin-top:12px;">
+            <h4 id="transaksi-title">Buat Transaksi Baru</h4>
+            <div class="form-row">
+              <input id="transaksi-tanggal" type="date" />
+              <select id="transaksi-anggota"></select>
+            </div>
+            <div class="form-row">
+              <select id="transaksi-jenis"></select>
+              <input id="transaksi-nilai" placeholder="Nilai (angka)" />
+            </div>
+            <div class="form-row">
+              <input id="transaksi-keterangan" placeholder="Keterangan" />
+              <div style="width:150px;"><button class="btn" onclick="saveTransaksi()">Simpan</button></div>
+            </div>
+            <input type="hidden" id="transaksi-id" />
+          </div>
+
+          <div style="margin-top:12px;overflow:auto;">
+            <table id="transaksi-table">
+              <thead><tr><th>Tanggal</th><th>Anggota</th><th>Jenis (Kategori)</th><th>Nilai</th><th>Keterangan</th><th>Aksi</th></tr></thead>
+              <tbody><tr><td colspan="6" class="small">Memuat...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- JURNAL -->
+      <div id="page-jurnal" class="page" style="display:none;">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3>Jurnal Umum</h3>
+            <div>
+              <button class="btn" onclick="exportCSV('transaksi')">Ekspor CSV Transaksi</button>
+              <button class="btn ghost" onclick="refreshAll()">Refresh</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;overflow:auto;">
+            <table id="jurnal-table">
+              <thead><tr><th>Tanggal</th><th>Deskripsi</th><th>Debit</th><th>Kredit</th><th>Saldo</th><th>Aksi</th></tr></thead>
+              <tbody><tr><td colspan="6" class="small">Memuat...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- LAPORAN -->
+      <div id="page-laporan" class="page" style="display:none;">
+        <div class="card">
+          <h3>Laporan Periode</h3>
+          <div class="form-row">
+            <input type="date" id="lap-start" />
+            <input type="date" id="lap-end" />
+            <div style="width:150px;"><button class="btn" onclick="generateReport()">Tampilkan</button></div>
+          </div>
+          <div style="margin-top:8px;">
+            <button class="btn ghost" onclick="window.print()">Preview Print</button>
+            <button class="btn" onclick="exportCSV('transaksi')">Ekspor CSV</button>
+          </div>
+          <div id="report-result" style="margin-top:12px;"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+/* =============== PENTING ================
+ Ganti WEB_APP_URL dengan URL Web App dari Apps Script (Deploy -> Web app).
+========================================*/
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyiRu2qYt4ho7y6Idwe6wyRXyPCAVdLyEAO5X9j7HdbMgXlZo3R3CvG86MTGYgBb9TK/exec"; // <-- GANTI INI
+
+// helper fetch
+async function post(mode,payload={}) {
+  try {
+    const body = Object.assign({}, payload, {mode});
+    const res = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    return await res.json();
+  } catch (err) {
+    console.error(err);
+    return {success:false, error:err.toString()};
+  }
+}
+
+function setPageTitle(t){ document.getElementById('page-title').innerText = t; }
+
+// Navigation
+document.querySelectorAll('#menu button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#menu button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    showPage(b.dataset.page);
+  });
+});
+
+function showPage(page) {
+  setPageTitle(page.charAt(0).toUpperCase()+page.slice(1));
+  document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+  document.querySelectorAll('#content > .card').forEach(c=>c.style.display='none'); // hide login card etc
+  // show main login area if page-login
+  if (page === 'login') {
+    document.getElementById('page-login').style.display='block';
+    return;
+  }
+  // show main area depending on page
+  document.getElementById('page-'+page).style.display='block';
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'anggota') loadAnggota();
+  if (page === 'jenis') loadJenis();
+  if (page === 'transaksi') { loadTransaksi(); loadDropdowns(); }
+  if (page === 'jurnal') loadJurnal();
+  if (page === 'laporan') {}
+}
+
+// ===== LOGIN =====
+async function doLogin() {
+  const u = document.getElementById('login-username').value.trim();
+  const p = document.getElementById('login-password').value.trim();
+  if (!u || !p) { document.getElementById('login-msg').innerText = "Username & password wajib diisi"; return; }
+  const res = await post('login',{username:u,password:p});
+  if (res.success) {
+    document.getElementById('page-login').style.display='none';
+    document.getElementById('user-welcome').style.display='block';
+    document.getElementById('user-name').innerText = res.user.username;
+    // show dashboard by default
+    document.querySelectorAll('#menu button').forEach(x=>x.classList.remove('active'));
+    document.querySelector('#menu button[data-page="dashboard"]').classList.add('active');
+    showPage('dashboard');
+    refreshAll();
+  } else {
+    document.getElementById('login-msg').innerText = "Login gagal - cek username/password";
+  }
+}
+
+// demo quick-fill (buat testing)
+function fillDemo(){
+  document.getElementById('login-username').value = 'admin';
+  document.getElementById('login-password').value = '123';
+}
+
+// ===== Dashboard =====
+async function loadDashboard() {
+  document.getElementById('summary').innerHTML = 'Memuat...';
+  const [anggotaRes, jenisRes, transRes, saldoRes] = await Promise.all([
+    post('getAnggota'), post('getJenis'), post('getTrans'), post('saldoPerAnggota')
+  ]);
+  const anggotaCount = (anggotaRes.success && anggotaRes.data) ? anggotaRes.data.length : 0;
+  const jenisCount = (jenisRes.success && jenisRes.data) ? jenisRes.data.length : 0;
+  const trans = (transRes.success && transRes.data) ? transRes.data : [];
+  let pemasukan=0, pengeluaran=0;
+  trans.forEach(t=>{ const v=Number(t.nilai)||0; if ((t.kategori||'').toLowerCase()==='masuk') pemasukan+=v; else pengeluaran+=v; });
+  const saldo = pemasukan - pengeluaran;
+  document.getElementById('summary').innerHTML = `
+    <div class="small">Anggota: <strong>${anggotaCount}</strong></div>
+    <div class="small">Jenis Transaksi: <strong>${jenisCount}</strong></div>
+    <div class="small">Total Pemasukan: <strong>Rp ${formatNumber(pemasukan)}</strong></div>
+    <div class="small">Total Pengeluaran: <strong>Rp ${formatNumber(pengeluaran)}</strong></div>
+    <div class="small">Saldo: <strong>Rp ${formatNumber(saldo)}</strong></div>
+  `;
+  // saldo per anggota
+  if (saldoRes.success) {
+    const html = saldoRes.data.map(s=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #eee;"><div>${escapeHtml(s.nama)}</div><div>Rp ${formatNumber(Number(s.saldo)||0)}</div></div>`).join('');
+    document.getElementById('saldo-list').innerHTML = html || '<div class="small">Belum ada data</div>';
+  } else {
+    document.getElementById('saldo-list').innerHTML = '<div class="small">Gagal memuat saldo</div>';
+  }
+}
+
+// ===== ANGGOTA CRUD =====
+function showAnggotaForm(){
+  document.getElementById('anggota-form').style.display='block';
+  document.getElementById('anggota-title').innerText='Tambah Anggota';
+  document.getElementById('anggota-id').value='';
+  document.getElementById('anggota-nama').value='';
+  document.getElementById('anggota-nohp').value='';
+  document.getElementById('anggota-alamat').value='';
+}
+function hideAnggotaForm(){ document.getElementById('anggota-form').style.display='none'; }
+
+async function saveAnggota(){
+  const id = document.getElementById('anggota-id').value;
+  const nama = document.getElementById('anggota-nama').value.trim();
+  const nohp = document.getElementById('anggota-nohp').value.trim();
+  const alamat = document.getElementById('anggota-alamat').value.trim();
+  if (!nama) return alert('Nama wajib diisi');
+  if (id) {
+    await post('updateAnggota',{id, nama, no_hp:nohp, alamat});
+    alert('Data anggota diupdate');
+  } else {
+    const res = await post('addAnggota',{nama, no_hp:nohp, alamat});
+    if (res.success) alert('Anggota ditambahkan');
+  }
+  hideAnggotaForm(); loadAnggota(); refreshAll();
+}
+
+async function loadAnggota(){
+  const res = await post('getAnggota');
+  const tbody = document.querySelector('#anggota-table tbody');
+  if (!res.success) { tbody.innerHTML = '<tr><td colspan="4">Gagal muat</td></tr>'; return; }
+  const data = res.data || [];
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="4" class="small">Belum ada anggota</td></tr>'; return; }
+  tbody.innerHTML = data.map(r=>`<tr>
+    <td>${escapeHtml(r.nama)}</td>
+    <td>${escapeHtml(r.no_hp||'')}</td>
+    <td>${escapeHtml(r.alamat||'')}</td>
+    <td>
+      <button class="btn ghost" onclick='editAnggota("${r.id}")'>Edit</button>
+      <button class="btn" onclick='deleteAnggota("${r.id}")'>Hapus</button>
+    </td>
+  </tr>`).join('');
+  // update dropdowns where needed
+  loadDropdowns(); loadDashboard();
+}
+
+async function editAnggota(id) {
+  const res = await post('getAnggota');
+  const rec = res.data.find(x=>x.id===id);
+  if (!rec) return alert('Data anggota tidak ditemukan');
+  document.getElementById('anggota-id').value = rec.id;
+  document.getElementById('anggota-nama').value = rec.nama;
+  document.getElementById('anggota-nohp').value = rec.no_hp || '';
+  document.getElementById('anggota-alamat').value = rec.alamat || '';
+  document.getElementById('anggota-form').style.display='block';
+  document.getElementById('anggota-title').innerText='Edit Anggota';
+}
+
+async function deleteAnggota(id) {
+  if (!confirm('Hapus anggota ini?')) return;
+  const res = await post('deleteAnggota',{id});
+  if (res.success) { alert('Terhapus'); loadAnggota(); refreshAll(); } else alert('Gagal: '+(res.error||''));
+}
+
+// ===== JENIS CRUD =====
+function showJenisForm(){
+  document.getElementById('jenis-form').style.display='block';
+  document.getElementById('jenis-title').innerText='Tambah Jenis';
+  document.getElementById('jenis-id').value='';
+  document.getElementById('jenis-nama').value='';
+  document.getElementById('jenis-kategori').value='masuk';
+}
+function hideJenisForm(){ document.getElementById('jenis-form').style.display='none'; }
+
+async function saveJenis(){
+  const id = document.getElementById('jenis-id').value;
+  const nama = document.getElementById('jenis-nama').value.trim();
+  const kategori = document.getElementById('jenis-kategori').value;
+  if (!nama) return alert('Nama jenis wajib diisi');
+  if (id) {
+    await post('updateJenis',{id, nama_jenis:nama, kategori});
+    alert('Jenis diupdate');
+  } else {
+    const res = await post('addJenis',{nama_jenis:nama, kategori});
+    if (res.success) alert('Jenis ditambahkan');
+  }
+  hideJenisForm(); loadJenis(); loadDropdowns(); refreshAll();
+}
+
+async function loadJenis(){
+  const res = await post('getJenis');
+  const tbody = document.querySelector('#jenis-table tbody');
+  if (!res.success) { tbody.innerHTML = '<tr><td colspan="3">Gagal muat</td></tr>'; return; }
+  const data = res.data || [];
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="3" class="small">Belum ada jenis</td></tr>'; return; }
+  tbody.innerHTML = data.map(r=>`<tr>
+    <td>${escapeHtml(r.nama_jenis)}</td>
+    <td>${escapeHtml(r.kategori)}</td>
+    <td>
+      <button class="btn ghost" onclick='editJenis("${r.id}")'>Edit</button>
+      <button class="btn" onclick='deleteJenis("${r.id}")'>Hapus</button>
+    </td>
+  </tr>`).join('');
+}
+
+async function editJenis(id) {
+  const res = await post('getJenis');
+  const rec = res.data.find(x=>x.id===id);
+  if (!rec) return alert('Data tidak ditemukan');
+  document.getElementById('jenis-id').value = rec.id;
+  document.getElementById('jenis-nama').value = rec.nama_jenis;
+  document.getElementById('jenis-kategori').value = rec.kategori;
+  document.getElementById('jenis-form').style.display='block';
+  document.getElementById('jenis-title').innerText='Edit Jenis';
+}
+
+async function deleteJenis(id) {
+  if (!confirm('Hapus jenis ini?')) return;
+  const res = await post('deleteJenis',{id});
+  if (res.success) { alert('Terhapus'); loadJenis(); loadDropdowns(); refreshAll(); } else alert('Gagal: '+(res.error||''));
+}
+
+// ===== TRANSAKSI CRUD =====
+async function loadDropdowns(){
+  const [anggotaRes, jenisRes] = await Promise.all([post('getAnggota'), post('getJenis')]);
+  const anggotaSel = document.getElementById('transaksi-anggota');
+  const jenisSel = document.getElementById('transaksi-jenis');
+  anggotaSel.innerHTML = '';
+  jenisSel.innerHTML = '';
+  if (anggotaRes.success) {
+    anggotaRes.data.forEach(a=>{
+      const opt = document.createElement('option'); opt.value=a.id; opt.text = a.nama; anggotaSel.add(opt);
+    });
+  } else anggotaSel.innerHTML = '<option value=\"\">- gagal muat -</option>';
+  if (jenisRes.success) {
+    jenisRes.data.forEach(j=>{
+      const opt = document.createElement('option'); opt.value=j.id; opt.text = j.nama_jenis + ' ('+j.kategori+')';
+      opt.dataset.nama = j.nama_jenis; opt.dataset.kategori = j.kategori;
+      jenisSel.add(opt);
+    });
+  } else jenisSel.innerHTML = '<option value=\"\">- gagal muat -</option>';
+}
+
+async function saveTransaksi(){
+  const id = document.getElementById('transaksi-id').value;
+  const tanggal = document.getElementById('transaksi-tanggal').value || new Date().toISOString().slice(0,10);
+  const anggotaId = document.getElementById('transaksi-anggota').value;
+  const jenisId = document.getElementById('transaksi-jenis').value;
+  const nilaiRaw = document.getElementById('transaksi-nilai').value;
+  const nilai = Number(String(nilaiRaw).replace(/,/g,'')); // support thousand separators
+  const keterangan = document.getElementById('transaksi-keterangan').value.trim();
+
+  if (!tanggal || !anggotaId || !jenisId) return alert('Lengkapi tanggal, anggota, dan jenis');
+  if (isNaN(nilai) || nilai <= 0) return alert('Nilai harus angka dan > 0');
+
+  const anggotaText = document.getElementById('transaksi-anggota').selectedOptions[0].text;
+  const jenisOpt = document.getElementById('transaksi-jenis').selectedOptions[0];
+  const jenisNama = jenisOpt.dataset.nama || jenisOpt.text;
+  const kategori = jenisOpt.dataset.kategori || '';
+
+  if (id) {
+    await post('updateTrans',{id,tanggal,anggota_id:anggotaId,anggota_nama:anggotaText,jenis_id:jenisId,jenis_nama:jenisNama,kategori,nilai,keterangan});
+    alert('Transaksi diupdate');
+  } else {
+    const resp = await post('addTrans',{tanggal,anggota_id:anggotaId,anggota_nama:anggotaText,jenis_id:jenisId,jenis_nama:jenisNama,kategori,nilai,keterangan});
+    if (resp.success) alert('Transaksi tersimpan');
+    else alert('Gagal: '+(resp.error||''));
+  }
+  document.getElementById('transaksi-id').value='';
+  loadTransaksi(); loadJurnal(); loadDashboard(); refreshAll();
+}
+
+async function loadTransaksi(){
+  const res = await post('getTrans');
+  const tbody = document.querySelector('#transaksi-table tbody');
+  if (!res.success) { tbody.innerHTML = '<tr><td colspan=\"6\">Gagal memuat data</td></tr>'; return; }
+  const data = res.data || [];
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan=\"6\" class=\"small\">Belum ada transaksi</td></tr>'; return; }
+  tbody.innerHTML = data.map(r=>`<tr>
+    <td>${r.tanggal}</td>
+    <td>${escapeHtml(r.anggota_nama)}</td>
+    <td>${escapeHtml(r.jenis_nama)} <span class="small">(${r.kategori})</span></td>
+    <td>Rp ${formatNumber(Number(r.nilai)||0)}</td>
+    <td>${escapeHtml(r.keterangan)}</td>
+    <td>
+      <button class="btn ghost" onclick='editTransaksi("${r.id}")'>Edit</button>
+      <button class="btn" onclick='deleteTransaksi("${r.id}")'>Hapus</button>
+    </td>
+  </tr>`).join('');
+}
+
+async function editTransaksi(id) {
+  const res = await post('getTrans');
+  const rec = res.data.find(x=>x.id===id);
+  if (!rec) return alert('Data tidak ditemukan');
+  document.getElementById('transaksi-id').value = rec.id;
+  document.getElementById('transaksi-tanggal').value = rec.tanggal;
+  await loadDropdowns();
+  document.getElementById('transaksi-anggota').value = rec.anggota_id;
+  document.getElementById('transaksi-jenis').value = rec.jenis_id;
+  document.getElementById('transaksi-nilai').value = rec.nilai;
+  document.getElementById('transaksi-keterangan').value = rec.keterangan;
+}
+
+async function deleteTransaksi(id) {
+  if (!confirm('Hapus transaksi ini?')) return;
+  const res = await post('deleteTrans',{id});
+  if (res.success) { alert('Terhapus'); loadTransaksi(); loadJurnal(); loadDashboard(); refreshAll(); } else alert('Gagal: '+(res.error||''));
+}
+
+// ===== JURNAL & SALDO =====
+async function loadJurnal() {
+  const res = await post('getTrans');
+  const tbody = document.querySelector('#jurnal-table tbody');
+  if (!res.success) { tbody.innerHTML = '<tr><td colspan=\"6\">Gagal memuat data</td></tr>'; return; }
+  const data = (res.data || []).slice().sort((a,b)=> new Date(a.tanggal) - new Date(b.tanggal));
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan=\"6\" class=\"small\">Belum ada transaksi</td></tr>'; return; }
+  let saldo = 0;
+  tbody.innerHTML = data.map(r=>{
+    const val = Number(r.nilai)||0;
+    let debit='', kredit='';
+    if ((r.kategori||'').toLowerCase() === 'masuk') { saldo += val; debit = `Rp ${formatNumber(val)}`; }
+    else { saldo -= val; kredit = `Rp ${formatNumber(val)}`; }
+    return `<tr>
+      <td>${r.tanggal}</td>
+      <td>${escapeHtml(r.jenis_nama)} - ${escapeHtml(r.anggota_nama)}</td>
+      <td>${debit}</td>
+      <td>${kredit}</td>
+      <td>Rp ${formatNumber(saldo)}</td>
+      <td><button class="btn ghost" onclick='editTransaksi("${r.id}")'>Edit</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== LAPORAN PERIODE =====
+async function generateReport() {
+  const start = document.getElementById('lap-start').value;
+  const end = document.getElementById('lap-end').value;
+  if (!start || !end) return alert('Pilih tanggal mulai & akhir');
+  const res = await post('laporan',{from:start,to:end});
+  if (!res.success) return alert('Gagal muat transaksi');
+  const data = res.data || [];
+  let pemasukan=0, pengeluaran=0;
+  data.forEach(t=>{ const v=Number(t.nilai)||0; if ((t.kategori||'').toLowerCase()==='masuk') pemasukan+=v; else pengeluaran+=v; });
+  const saldoAkhir = pemasukan - pengeluaran;
+  document.getElementById('report-result').innerHTML = `
+    <div class="card">
+      <div class="small">Periode: <strong>${start}</strong> - <strong>${end}</strong></div>
+      <div style="margin-top:8px;">
+        <div class="small">Total Pemasukan: <strong>Rp ${formatNumber(pemasukan)}</strong></div>
+        <div class="small">Total Pengeluaran: <strong>Rp ${formatNumber(pengeluaran)}</strong></div>
+        <div class="small">Saldo Akhir: <strong>Rp ${formatNumber(saldoAkhir)}</strong></div>
+      </div>
+      <div style="margin-top:12px;overflow:auto;">
+        <table>
+          <thead><tr><th>Tanggal</th><th>Anggota</th><th>Jenis</th><th>Nilai</th><th>Keterangan</th></tr></thead>
+          <tbody>
+            ${data.map(r=>`<tr>
+              <td>${r.tanggal}</td>
+              <td>${escapeHtml(r.anggota_nama)}</td>
+              <td>${escapeHtml(r.jenis_nama)} (${r.kategori})</td>
+              <td>Rp ${formatNumber(Number(r.nilai)||0)}</td>
+              <td>${escapeHtml(r.keterangan)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ===== EXPORT CSV =====
+function exportCSV(which='transaksi') {
+  // will open webapp?export=transaksi
+  const url = `${WEB_APP_URL}?export=${which}`;
+  window.open(url,'_blank');
+}
+
+// ===== UTILITIES =====
+function escapeHtml(s){ if (!s && s!==0) return ''; return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function formatNumber(n){ return Number(n).toLocaleString('id-ID'); }
+
+async function refreshAll(){
+  await Promise.all([loadAnggota(), loadJenis(), loadTransaksi(), loadJurnal(), loadDashboard()]);
+}
+document.getElementById('refreshBtn').addEventListener('click', refreshAll);
+
+// initial state: show login page
+showPage('login');
+</script>
+</body>
+</html>
