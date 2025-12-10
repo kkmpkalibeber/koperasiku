@@ -41,37 +41,23 @@
       <button data-page="jurnal">Jurnal Umum</button>
       <button data-page="laporan">Laporan Periode</button>
     </nav>
-    <div style="position:absolute;bottom:18px;left:24px;right:24px;" class="small">Deploy Web App & ganti URL di pengaturan.</div>
+    <div style="position:absolute;bottom:18px;left:24px;right:24px;" class="small">Aplikasi Koperasi Sekolah v1.0</div>
   </aside>
 
   <main class="main">
     <div class="topbar">
       <div>
-        <h2 id="page-title">Login</h2>
-        <div id="user-welcome" class="small" style="display:none;">Selamat datang, <span id="user-name"></span></div>
+        <h2 id="page-title">Dashboard</h2>
+        <div class="small" id="status-info">Memuat aplikasi...</div>
       </div>
       <div class="right">
-        <button id="refreshBtn" class="btn">Refresh</button>
+        <button id="refreshBtn" class="btn">Refresh Data</button>
       </div>
     </div>
 
     <div id="content">
-      <!-- LOGIN -->
-      <div id="page-login" class="card">
-        <h3>Login</h3>
-        <div class="form-row">
-          <input id="login-username" placeholder="username (default: admin)" />
-          <input id="login-password" type="password" placeholder="password (default: 123)" />
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn" onclick="doLogin()">Masuk</button>
-          <button class="btn ghost" onclick="fillDemo()">Isi Demo</button>
-        </div>
-        <div id="login-msg" class="small" style="margin-top:8px;color:#a00;"></div>
-      </div>
-
       <!-- DASHBOARD -->
-      <div id="page-dashboard" class="page" style="display:none;">
+      <div id="page-dashboard" class="page" style="display:block;">
         <div class="grid">
           <div class="card">
             <h3>Ringkasan</h3>
@@ -80,6 +66,16 @@
           <div class="card">
             <h3>Saldo Per Anggota</h3>
             <div id="saldo-list" style="max-height:240px;overflow:auto;">Memuat...</div>
+          </div>
+        </div>
+        
+        <div class="card" style="margin-top:16px;">
+          <h3>Quick Actions</h3>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn" onclick="showPage('anggota'); showAnggotaForm()">Tambah Anggota Baru</button>
+            <button class="btn" onclick="showPage('jenis'); showJenisForm()">Tambah Jenis Transaksi</button>
+            <button class="btn" onclick="showPage('transaksi')">Buat Transaksi</button>
+            <button class="btn ghost" onclick="generateReport()">Buat Laporan Bulan Ini</button>
           </div>
         </div>
       </div>
@@ -102,6 +98,9 @@
               <div class="form-row">
                 <input id="anggota-alamat" placeholder="Alamat" />
                 <div style="width:150px;"><button class="btn" onclick="saveAnggota()" id="btn-save-anggota">Simpan</button></div>
+              </div>
+              <div style="margin-top:8px;">
+                <button class="btn ghost" onclick="hideAnggotaForm()">Batal</button>
               </div>
               <input type="hidden" id="anggota-id" />
             </div>
@@ -131,7 +130,10 @@
                 <input id="jenis-nama" placeholder="Nama Jenis" />
                 <select id="jenis-kategori"><option value="masuk">Masuk</option><option value="keluar">Keluar</option></select>
               </div>
-              <div style="margin-top:8px;"><button class="btn" onclick="saveJenis()">Simpan</button> <button class="btn ghost" onclick="hideJenisForm()">Batal</button></div>
+              <div style="margin-top:8px;">
+                <button class="btn" onclick="saveJenis()">Simpan</button>
+                <button class="btn ghost" onclick="hideJenisForm()">Batal</button>
+              </div>
               <input type="hidden" id="jenis-id" />
             </div>
           </div>
@@ -161,7 +163,12 @@
             </div>
             <div class="form-row">
               <input id="transaksi-keterangan" placeholder="Keterangan" />
-              <div style="width:150px;"><button class="btn" onclick="saveTransaksi()">Simpan</button></div>
+              <div style="width:150px;">
+                <button class="btn" onclick="saveTransaksi()">Simpan</button>
+              </div>
+            </div>
+            <div style="margin-top:8px;">
+              <button class="btn ghost" onclick="resetTransaksiForm()">Reset Form</button>
             </div>
             <input type="hidden" id="transaksi-id" />
           </div>
@@ -181,7 +188,6 @@
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <h3>Jurnal Umum</h3>
             <div>
-              <button class="btn" onclick="exportCSV('transaksi')">Ekspor CSV Transaksi</button>
               <button class="btn ghost" onclick="refreshAll()">Refresh</button>
             </div>
           </div>
@@ -205,8 +211,8 @@
             <div style="width:150px;"><button class="btn" onclick="generateReport()">Tampilkan</button></div>
           </div>
           <div style="margin-top:8px;">
-            <button class="btn ghost" onclick="window.print()">Preview Print</button>
-            <button class="btn" onclick="exportCSV('transaksi')">Ekspor CSV</button>
+            <button class="btn ghost" onclick="window.print()">Print Laporan</button>
+            <button class="btn" onclick="exportToExcel()">Ekspor Excel</button>
           </div>
           <div id="report-result" style="margin-top:12px;"></div>
         </div>
@@ -218,12 +224,12 @@
 
 <script>
 /* =============== PENTING ================
- Ganti WEB_APP_URL dengan URL Web App dari Apps Script (Deploy -> Web app).
+ Ganti WEB_APP_URL dengan URL Web App dari Apps Script.
 ========================================*/
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyy8-8ETF44tfMQ9W-lhT7Twimib1zm8RXpZWY-nNjrQvsBmhhnPBmySPMk331FQav-/exec"; // <-- GANTI DENGAN URL KAMU
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyy8-8ETF44tfMQ9W-lhT7Twimib1zm8RXpZWY-nNjrQvsBmhhnPBmySPMk331FQav-/exec";
 
 // ===========================================
-// HELPER FUNCTIONS - FIXED VERSION
+// HELPER FUNCTIONS
 // ===========================================
 
 // Debug logging
@@ -231,57 +237,36 @@ function debugLog(...args) {
   console.log('[Koperasi]', ...args);
 }
 
-// Main POST function dengan error handling yang lebih baik
+// Main POST function
 async function post(mode, payload = {}) {
   try {
     const body = { ...payload, mode };
     debugLog('Sending request:', mode, body);
     
-    // Gunakan XMLHttpRequest untuk menghindari CORS issues
-    return new Promise((resolve) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', WEB_APP_URL, true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      
-      xhr.onload = function() {
-        try {
-          debugLog('Raw response:', xhr.responseText);
-          const response = JSON.parse(xhr.responseText);
-          resolve(response);
-        } catch (parseErr) {
-          debugLog('Parse error:', parseErr);
-          resolve({ 
-            success: false, 
-            error: 'Invalid JSON response: ' + xhr.responseText.substring(0, 100) 
-          });
-        }
-      };
-      
-      xhr.onerror = function() {
-        debugLog('Network error');
-        resolve({ 
-          success: false, 
-          error: 'Network error. Periksa koneksi internet atau URL API.' 
-        });
-      };
-      
-      xhr.timeout = 10000; // 10 detik timeout
-      xhr.ontimeout = function() {
-        debugLog('Request timeout');
-        resolve({ 
-          success: false, 
-          error: 'Request timeout. Server terlalu lama merespon.' 
-        });
-      };
-      
-      xhr.send(JSON.stringify(body));
+    const res = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
     });
     
+    const text = await res.text();
+    debugLog('Raw response:', text);
+    
+    try {
+      return JSON.parse(text);
+    } catch (parseErr) {
+      debugLog('Parse error:', parseErr);
+      return { 
+        success: false, 
+        error: 'Invalid JSON: ' + text.substring(0, 100) 
+      };
+    }
+    
   } catch (err) {
-    debugLog('Post function error:', err);
+    debugLog('Post error:', err);
     return { 
       success: false, 
-      error: 'Client error: ' + err.toString() 
+      error: 'Network error: ' + err.toString() 
     };
   }
 }
@@ -292,6 +277,7 @@ async function post(mode, payload = {}) {
 
 function setPageTitle(t) { 
   document.getElementById('page-title').innerText = t; 
+  document.getElementById('status-info').innerText = 'Aplikasi Koperasi Sekolah';
 }
 
 // Navigation
@@ -308,12 +294,6 @@ function showPage(page) {
   
   // Hide semua page
   document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-  document.getElementById('page-login').style.display = 'none';
-  
-  if (page === 'login') {
-    document.getElementById('page-login').style.display = 'block';
-    return;
-  }
   
   // Show page yang dipilih
   const pageElement = document.getElementById('page-' + page);
@@ -333,87 +313,19 @@ function showPage(page) {
 }
 
 // ===========================================
-// LOGIN FUNCTIONS - FIXED
-// ===========================================
-
-async function doLogin() {
-  const u = document.getElementById('login-username').value.trim();
-  const p = document.getElementById('login-password').value.trim();
-  const msgElement = document.getElementById('login-msg');
-  
-  // Clear previous message
-  msgElement.innerText = "";
-  msgElement.style.color = "#a00";
-  
-  if (!u || !p) { 
-    msgElement.innerText = "Username & password wajib diisi"; 
-    return; 
-  }
-  
-  // Show loading
-  msgElement.innerText = "Memproses login...";
-  msgElement.style.color = "#0b63d7";
-  
-  try {
-    debugLog("Attempting login for:", u);
-    const res = await post('login', { username: u, password: p });
-    debugLog("Login response:", res);
-    
-    if (res.success) {
-      msgElement.innerText = "Login berhasil!";
-      msgElement.style.color = "#0a8";
-      
-      // Hide login form
-      document.getElementById('page-login').style.display = 'none';
-      document.getElementById('user-welcome').style.display = 'block';
-      document.getElementById('user-name').innerText = res.user.username;
-      
-      // Show dashboard
-      document.querySelectorAll('#menu button').forEach(x => x.classList.remove('active'));
-      const dashboardBtn = document.querySelector('#menu button[data-page="dashboard"]');
-      if (dashboardBtn) {
-        dashboardBtn.classList.add('active');
-      }
-      showPage('dashboard');
-      
-      // Load initial data
-      setTimeout(() => {
-        loadDashboard();
-      }, 300);
-      
-    } else {
-      let errorMsg = "Login gagal";
-      if (res.error) errorMsg += ": " + res.error;
-      msgElement.innerText = errorMsg;
-      msgElement.style.color = "#a00";
-    }
-  } catch (err) {
-    debugLog("Login error:", err);
-    msgElement.innerText = "Error: " + (err.message || err.toString());
-    msgElement.style.color = "#a00";
-  }
-}
-
-// demo quick-fill (buat testing)
-function fillDemo() {
-  document.getElementById('login-username').value = 'admin';
-  document.getElementById('login-password').value = '123';
-}
-
-// ===========================================
 // DASHBOARD FUNCTIONS
 // ===========================================
 
 async function loadDashboard() {
   try {
-    document.getElementById('summary').innerHTML = 'Memuat...';
+    document.getElementById('summary').innerHTML = '<div class="small">Memuat data...</div>';
+    document.getElementById('saldo-list').innerHTML = '<div class="small">Memuat saldo...</div>';
     
     // Load data paralel
-    const [anggotaRes, jenisRes, transRes, saldoRes] = await Promise.allSettled([
+    const [anggotaRes, jenisRes, transRes] = await Promise.allSettled([
       post('getAnggota'),
       post('getJenis'),
-      post('getTrans'),
-      post('saldoPerAnggota')
+      post('getTrans')
     ]);
     
     // Proses response anggota
@@ -425,7 +337,7 @@ async function loadDashboard() {
     // Proses response jenis
     let jenisCount = 0;
     if (jenisRes.status === 'fulfilled' && jenisRes.value.success) {
-      jenisCount = jenisRes.value.data ? jenisRes.value.data.length : 0;
+      jenisCount = jenisRes.value.data ? anggotaRes.value.data.length : 0;
     }
     
     // Proses transaksi
@@ -445,30 +357,75 @@ async function loadDashboard() {
     
     // Update summary
     document.getElementById('summary').innerHTML = `
-      <div class="small">Anggota: <strong>${anggotaCount}</strong></div>
+      <div class="small">Jumlah Anggota: <strong>${anggotaCount}</strong></div>
       <div class="small">Jenis Transaksi: <strong>${jenisCount}</strong></div>
       <div class="small">Total Pemasukan: <strong>Rp ${formatNumber(pemasukan)}</strong></div>
       <div class="small">Total Pengeluaran: <strong>Rp ${formatNumber(pengeluaran)}</strong></div>
-      <div class="small">Saldo: <strong>Rp ${formatNumber(saldo)}</strong></div>
+      <div class="small">Saldo Total: <strong style="color:${saldo >= 0 ? '#0a8' : '#a00'}">Rp ${formatNumber(saldo)}</strong></div>
     `;
     
-    // Update saldo per anggota
-    const saldoList = document.getElementById('saldo-list');
-    if (saldoRes.status === 'fulfilled' && saldoRes.value.success && saldoRes.value.data) {
-      const html = saldoRes.value.data.map(s => 
-        `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #eee;">
-           <div>${escapeHtml(s.nama)}</div>
-           <div>Rp ${formatNumber(Number(s.saldo) || 0)}</div>
-         </div>`
-      ).join('');
-      saldoList.innerHTML = html || '<div class="small">Belum ada data</div>';
-    } else {
-      saldoList.innerHTML = '<div class="small">Gagal memuat saldo</div>';
-    }
+    // Hitung saldo per anggota
+    await loadSaldoPerAnggota();
     
   } catch (err) {
     debugLog("Dashboard error:", err);
-    document.getElementById('summary').innerHTML = '<div class="small">Error memuat data</div>';
+    document.getElementById('summary').innerHTML = '<div class="small" style="color:#a00">Error memuat data</div>';
+  }
+}
+
+async function loadSaldoPerAnggota() {
+  try {
+    const anggotaRes = await post('getAnggota');
+    const transRes = await post('getTrans');
+    
+    if (!anggotaRes.success || !transRes.success) {
+      document.getElementById('saldo-list').innerHTML = '<div class="small">Gagal memuat saldo</div>';
+      return;
+    }
+    
+    const anggota = anggotaRes.data || [];
+    const transaksi = transRes.data || [];
+    
+    const saldoMap = {};
+    
+    // Inisialisasi semua anggota
+    anggota.forEach(a => {
+      saldoMap[a.id] = { nama: a.nama, saldo: 0 };
+    });
+    
+    // Hitung saldo
+    transaksi.forEach(t => {
+      const nilai = Number(t.nilai) || 0;
+      if (saldoMap[t.anggota_id]) {
+        if ((t.kategori || '').toLowerCase() === 'masuk') {
+          saldoMap[t.anggota_id].saldo += nilai;
+        } else {
+          saldoMap[t.anggota_id].saldo -= nilai;
+        }
+      }
+    });
+    
+    const saldoList = document.getElementById('saldo-list');
+    if (Object.keys(saldoMap).length === 0) {
+      saldoList.innerHTML = '<div class="small">Belum ada data anggota</div>';
+      return;
+    }
+    
+    // Convert to array dan sort by nama
+    const saldoArray = Object.values(saldoMap)
+      .sort((a, b) => a.nama.localeCompare(b.nama));
+    
+    const html = saldoArray.map(s => 
+      `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #eee;">
+         <div>${escapeHtml(s.nama)}</div>
+         <div style="color:${s.saldo >= 0 ? '#0a8' : '#a00'}">Rp ${formatNumber(Number(s.saldo) || 0)}</div>
+       </div>`
+    ).join('');
+    
+    saldoList.innerHTML = html;
+    
+  } catch (err) {
+    document.getElementById('saldo-list').innerHTML = '<div class="small" style="color:#a00">Error memuat saldo</div>';
   }
 }
 
@@ -483,6 +440,7 @@ function showAnggotaForm() {
   document.getElementById('anggota-nama').value = '';
   document.getElementById('anggota-nohp').value = '';
   document.getElementById('anggota-alamat').value = '';
+  document.getElementById('anggota-nama').focus();
 }
 
 function hideAnggotaForm() { 
@@ -497,25 +455,29 @@ async function saveAnggota() {
   
   if (!nama) {
     alert('Nama wajib diisi');
+    document.getElementById('anggota-nama').focus();
     return;
   }
   
   try {
+    let res;
     if (id) {
       // Update
-      const res = await post('updateAnggota', { id, nama, no_hp: nohp, alamat });
+      res = await post('updateAnggota', { id, nama, no_hp: nohp, alamat });
       if (res.success) {
-        alert('Data anggota diupdate');
+        alert('✅ Data anggota berhasil diupdate');
       } else {
-        alert('Gagal update: ' + (res.error || ''));
+        alert('❌ Gagal update: ' + (res.error || ''));
+        return;
       }
     } else {
       // Add new
-      const res = await post('addAnggota', { nama, no_hp: nohp, alamat });
+      res = await post('addAnggota', { nama, no_hp: nohp, alamat });
       if (res.success) {
-        alert('Anggota ditambahkan');
+        alert('✅ Anggota berhasil ditambahkan');
       } else {
-        alert('Gagal tambah: ' + (res.error || ''));
+        alert('❌ Gagal tambah: ' + (res.error || ''));
+        return;
       }
     }
     
@@ -524,7 +486,7 @@ async function saveAnggota() {
     loadDashboard();
     
   } catch (err) {
-    alert('Error: ' + err.message);
+    alert('❌ Error: ' + err.message);
   }
 }
 
@@ -534,22 +496,25 @@ async function loadAnggota() {
     const tbody = document.querySelector('#anggota-table tbody');
     
     if (!res.success) {
-      tbody.innerHTML = '<tr><td colspan="4">Gagal memuat data</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="color:#a00">Gagal memuat data</td></tr>';
       return;
     }
     
     const data = res.data || [];
     
     if (data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="small">Belum ada anggota</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="small">Belum ada data anggota</td></tr>';
       return;
     }
+    
+    // Sort by nama
+    data.sort((a, b) => a.nama.localeCompare(b.nama));
     
     tbody.innerHTML = data.map(r => `
       <tr>
         <td>${escapeHtml(r.nama)}</td>
-        <td>${escapeHtml(r.no_hp || '')}</td>
-        <td>${escapeHtml(r.alamat || '')}</td>
+        <td>${escapeHtml(r.no_hp || '-')}</td>
+        <td>${escapeHtml(r.alamat || '-')}</td>
         <td>
           <button class="btn ghost" onclick="editAnggota('${r.id}')">Edit</button>
           <button class="btn" onclick="deleteAnggota('${r.id}')">Hapus</button>
@@ -557,13 +522,13 @@ async function loadAnggota() {
       </tr>
     `).join('');
     
-    // Update dropdowns jika diperlukan
+    // Update dropdowns untuk transaksi
     loadDropdowns();
     
   } catch (err) {
     debugLog("Load anggota error:", err);
     document.querySelector('#anggota-table tbody').innerHTML = 
-      '<tr><td colspan="4">Error memuat data</td></tr>';
+      '<tr><td colspan="4" style="color:#a00">Error memuat data</td></tr>';
   }
 }
 
@@ -587,6 +552,7 @@ async function editAnggota(id) {
     document.getElementById('anggota-alamat').value = rec.alamat || '';
     document.getElementById('anggota-form').style.display = 'block';
     document.getElementById('anggota-title').innerText = 'Edit Anggota';
+    document.getElementById('anggota-nama').focus();
     
   } catch (err) {
     alert('Error: ' + err.message);
@@ -594,19 +560,19 @@ async function editAnggota(id) {
 }
 
 async function deleteAnggota(id) {
-  if (!confirm('Hapus anggota ini?')) return;
+  if (!confirm('Yakin hapus anggota ini?')) return;
   
   try {
     const res = await post('deleteAnggota', { id });
     if (res.success) {
-      alert('Anggota berhasil dihapus');
+      alert('✅ Anggota berhasil dihapus');
       loadAnggota();
       loadDashboard();
     } else {
-      alert('Gagal menghapus: ' + (res.error || ''));
+      alert('❌ Gagal menghapus: ' + (res.error || ''));
     }
   } catch (err) {
-    alert('Error: ' + err.message);
+    alert('❌ Error: ' + err.message);
   }
 }
 
@@ -620,6 +586,7 @@ function showJenisForm() {
   document.getElementById('jenis-id').value = '';
   document.getElementById('jenis-nama').value = '';
   document.getElementById('jenis-kategori').value = 'masuk';
+  document.getElementById('jenis-nama').focus();
 }
 
 function hideJenisForm() { 
@@ -633,25 +600,29 @@ async function saveJenis() {
   
   if (!nama) {
     alert('Nama jenis wajib diisi');
+    document.getElementById('jenis-nama').focus();
     return;
   }
   
   try {
+    let res;
     if (id) {
       // Update
-      const res = await post('updateJenis', { id, nama_jenis: nama, kategori });
+      res = await post('updateJenis', { id, nama_jenis: nama, kategori });
       if (res.success) {
-        alert('Jenis transaksi diupdate');
+        alert('✅ Jenis transaksi berhasil diupdate');
       } else {
-        alert('Gagal update: ' + (res.error || ''));
+        alert('❌ Gagal update: ' + (res.error || ''));
+        return;
       }
     } else {
       // Add new
-      const res = await post('addJenis', { nama_jenis: nama, kategori });
+      res = await post('addJenis', { nama_jenis: nama, kategori });
       if (res.success) {
-        alert('Jenis transaksi ditambahkan');
+        alert('✅ Jenis transaksi berhasil ditambahkan');
       } else {
-        alert('Gagal tambah: ' + (res.error || ''));
+        alert('❌ Gagal tambah: ' + (res.error || ''));
+        return;
       }
     }
     
@@ -660,7 +631,7 @@ async function saveJenis() {
     loadDropdowns();
     
   } catch (err) {
-    alert('Error: ' + err.message);
+    alert('❌ Error: ' + err.message);
   }
 }
 
@@ -670,7 +641,7 @@ async function loadJenis() {
     const tbody = document.querySelector('#jenis-table tbody');
     
     if (!res.success) {
-      tbody.innerHTML = '<tr><td colspan="3">Gagal memuat data</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="3" style="color:#a00">Gagal memuat data</td></tr>';
       return;
     }
     
@@ -681,10 +652,13 @@ async function loadJenis() {
       return;
     }
     
+    // Sort by nama
+    data.sort((a, b) => a.nama_jenis.localeCompare(b.nama_jenis));
+    
     tbody.innerHTML = data.map(r => `
       <tr>
         <td>${escapeHtml(r.nama_jenis)}</td>
-        <td>${escapeHtml(r.kategori)}</td>
+        <td><span style="color:${r.kategori === 'masuk' ? '#0a8' : '#a00'}">${escapeHtml(r.kategori)}</span></td>
         <td>
           <button class="btn ghost" onclick="editJenis('${r.id}')">Edit</button>
           <button class="btn" onclick="deleteJenis('${r.id}')">Hapus</button>
@@ -695,7 +669,7 @@ async function loadJenis() {
   } catch (err) {
     debugLog("Load jenis error:", err);
     document.querySelector('#jenis-table tbody').innerHTML = 
-      '<tr><td colspan="3">Error memuat data</td></tr>';
+      '<tr><td colspan="3" style="color:#a00">Error memuat data</td></tr>';
   }
 }
 
@@ -718,6 +692,7 @@ async function editJenis(id) {
     document.getElementById('jenis-kategori').value = rec.kategori;
     document.getElementById('jenis-form').style.display = 'block';
     document.getElementById('jenis-title').innerText = 'Edit Jenis';
+    document.getElementById('jenis-nama').focus();
     
   } catch (err) {
     alert('Error: ' + err.message);
@@ -725,19 +700,19 @@ async function editJenis(id) {
 }
 
 async function deleteJenis(id) {
-  if (!confirm('Hapus jenis transaksi ini?')) return;
+  if (!confirm('Yakin hapus jenis transaksi ini?')) return;
   
   try {
     const res = await post('deleteJenis', { id });
     if (res.success) {
-      alert('Jenis transaksi berhasil dihapus');
+      alert('✅ Jenis transaksi berhasil dihapus');
       loadJenis();
       loadDropdowns();
     } else {
-      alert('Gagal menghapus: ' + (res.error || ''));
+      alert('❌ Gagal menghapus: ' + (res.error || ''));
     }
   } catch (err) {
-    alert('Error: ' + err.message);
+    alert('❌ Error: ' + err.message);
   }
 }
 
@@ -767,6 +742,8 @@ async function loadDropdowns() {
         opt.textContent = a.nama;
         anggotaSel.appendChild(opt);
       });
+    } else {
+      anggotaSel.innerHTML = '<option value="">Gagal memuat anggota</option>';
     }
     
     // Isi dropdown jenis
@@ -779,11 +756,22 @@ async function loadDropdowns() {
         opt.dataset.kategori = j.kategori;
         jenisSel.appendChild(opt);
       });
+    } else {
+      jenisSel.innerHTML = '<option value="">Gagal memuat jenis</option>';
     }
     
   } catch (err) {
     debugLog("Load dropdowns error:", err);
   }
+}
+
+function resetTransaksiForm() {
+  document.getElementById('transaksi-id').value = '';
+  document.getElementById('transaksi-tanggal').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('transaksi-anggota').value = '';
+  document.getElementById('transaksi-jenis').value = '';
+  document.getElementById('transaksi-nilai').value = '';
+  document.getElementById('transaksi-keterangan').value = '';
 }
 
 async function saveTransaksi() {
@@ -823,9 +811,10 @@ async function saveTransaksi() {
   const kategori = jenisOpt.dataset.kategori || '';
   
   try {
+    let res;
     if (id) {
       // Update transaksi
-      const res = await post('updateTrans', {
+      res = await post('updateTrans', {
         id,
         tanggal,
         anggota_id: anggotaId,
@@ -838,13 +827,14 @@ async function saveTransaksi() {
       });
       
       if (res.success) {
-        alert('Transaksi diupdate');
+        alert('✅ Transaksi berhasil diupdate');
       } else {
-        alert('Gagal update: ' + (res.error || ''));
+        alert('❌ Gagal update: ' + (res.error || ''));
+        return;
       }
     } else {
       // Tambah transaksi baru
-      const res = await post('addTrans', {
+      res = await post('addTrans', {
         tanggal,
         anggota_id: anggotaId,
         anggota_nama: anggotaText,
@@ -856,17 +846,15 @@ async function saveTransaksi() {
       });
       
       if (res.success) {
-        alert('Transaksi berhasil disimpan');
+        alert('✅ Transaksi berhasil disimpan');
       } else {
-        alert('Gagal menyimpan: ' + (res.error || ''));
+        alert('❌ Gagal menyimpan: ' + (res.error || ''));
+        return;
       }
     }
     
     // Reset form
-    document.getElementById('transaksi-id').value = '';
-    document.getElementById('transaksi-tanggal').value = '';
-    document.getElementById('transaksi-nilai').value = '';
-    document.getElementById('transaksi-keterangan').value = '';
+    resetTransaksiForm();
     
     // Reload data
     loadTransaksi();
@@ -874,7 +862,7 @@ async function saveTransaksi() {
     loadDashboard();
     
   } catch (err) {
-    alert('Error: ' + err.message);
+    alert('❌ Error: ' + err.message);
   }
 }
 
@@ -884,7 +872,7 @@ async function loadTransaksi() {
     const tbody = document.querySelector('#transaksi-table tbody');
     
     if (!res.success) {
-      tbody.innerHTML = '<tr><td colspan="6">Gagal memuat data</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="color:#a00">Gagal memuat data</td></tr>';
       return;
     }
     
@@ -902,9 +890,9 @@ async function loadTransaksi() {
       <tr>
         <td>${r.tanggal}</td>
         <td>${escapeHtml(r.anggota_nama)}</td>
-        <td>${escapeHtml(r.jenis_nama)} <span class="small">(${r.kategori})</span></td>
+        <td>${escapeHtml(r.jenis_nama)} <span class="small" style="color:${r.kategori === 'masuk' ? '#0a8' : '#a00'}">(${r.kategori})</span></td>
         <td>Rp ${formatNumber(Number(r.nilai) || 0)}</td>
-        <td>${escapeHtml(r.keterangan || '')}</td>
+        <td>${escapeHtml(r.keterangan || '-')}</td>
         <td>
           <button class="btn ghost" onclick="editTransaksi('${r.id}')">Edit</button>
           <button class="btn" onclick="deleteTransaksi('${r.id}')">Hapus</button>
@@ -915,7 +903,7 @@ async function loadTransaksi() {
   } catch (err) {
     debugLog("Load transaksi error:", err);
     document.querySelector('#transaksi-table tbody').innerHTML = 
-      '<tr><td colspan="6">Error memuat data</td></tr>';
+      '<tr><td colspan="6" style="color:#a00">Error memuat data</td></tr>';
   }
 }
 
@@ -939,10 +927,14 @@ async function editTransaksi(id) {
     // Set nilai form
     document.getElementById('transaksi-id').value = rec.id;
     document.getElementById('transaksi-tanggal').value = rec.tanggal;
-    document.getElementById('transaksi-anggota').value = rec.anggota_id;
-    document.getElementById('transaksi-jenis').value = rec.jenis_id;
-    document.getElementById('transaksi-nilai').value = rec.nilai;
-    document.getElementById('transaksi-keterangan').value = rec.keterangan || '';
+    
+    // Tunggu sebentar agar dropdown terisi
+    setTimeout(() => {
+      document.getElementById('transaksi-anggota').value = rec.anggota_id;
+      document.getElementById('transaksi-jenis').value = rec.jenis_id;
+      document.getElementById('transaksi-nilai').value = rec.nilai;
+      document.getElementById('transaksi-keterangan').value = rec.keterangan || '';
+    }, 300);
     
   } catch (err) {
     alert('Error: ' + err.message);
@@ -950,20 +942,20 @@ async function editTransaksi(id) {
 }
 
 async function deleteTransaksi(id) {
-  if (!confirm('Hapus transaksi ini?')) return;
+  if (!confirm('Yakin hapus transaksi ini?')) return;
   
   try {
     const res = await post('deleteTrans', { id });
     if (res.success) {
-      alert('Transaksi berhasil dihapus');
+      alert('✅ Transaksi berhasil dihapus');
       loadTransaksi();
       loadJurnal();
       loadDashboard();
     } else {
-      alert('Gagal menghapus: ' + (res.error || ''));
+      alert('❌ Gagal menghapus: ' + (res.error || ''));
     }
   } catch (err) {
-    alert('Error: ' + err.message);
+    alert('❌ Error: ' + err.message);
   }
 }
 
@@ -977,7 +969,7 @@ async function loadJurnal() {
     const tbody = document.querySelector('#jurnal-table tbody');
     
     if (!res.success) {
-      tbody.innerHTML = '<tr><td colspan="6">Gagal memuat data</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="color:#a00">Gagal memuat data</td></tr>';
       return;
     }
     
@@ -1008,9 +1000,9 @@ async function loadJurnal() {
         <tr>
           <td>${r.tanggal}</td>
           <td>${escapeHtml(r.jenis_nama)} - ${escapeHtml(r.anggota_nama)}</td>
-          <td>${debit}</td>
-          <td>${kredit}</td>
-          <td>Rp ${formatNumber(saldo)}</td>
+          <td style="color:#0a8">${debit}</td>
+          <td style="color:#a00">${kredit}</td>
+          <td style="font-weight:bold;color:${saldo >= 0 ? '#0a8' : '#a00'}">Rp ${formatNumber(saldo)}</td>
           <td>
             <button class="btn ghost" onclick="editTransaksi('${r.id}')">Edit</button>
           </td>
@@ -1021,7 +1013,7 @@ async function loadJurnal() {
   } catch (err) {
     debugLog("Load jurnal error:", err);
     document.querySelector('#jurnal-table tbody').innerHTML = 
-      '<tr><td colspan="6">Error memuat data</td></tr>';
+      '<tr><td colspan="6" style="color:#a00">Error memuat data</td></tr>';
   }
 }
 
@@ -1039,17 +1031,38 @@ async function generateReport() {
     return;
   }
   
+  if (start > end) {
+    alert('Tanggal mulai tidak boleh lebih besar dari tanggal akhir');
+    return;
+  }
+  
   resultDiv.innerHTML = '<div class="small">Memuat laporan...</div>';
   
   try {
-    const res = await post('laporan', { from: start, to: end });
+    const res = await post('getTrans');
     
     if (!res.success) {
       resultDiv.innerHTML = '<div class="small" style="color:#a00">Gagal memuat transaksi: ' + (res.error || '') + '</div>';
       return;
     }
     
-    const data = res.data || [];
+    const allData = res.data || [];
+    
+    // Filter berdasarkan tanggal
+    const data = allData.filter(t => {
+      const tanggal = t.tanggal || '';
+      return tanggal >= start && tanggal <= end;
+    });
+    
+    if (data.length === 0) {
+      resultDiv.innerHTML = `
+        <div class="card">
+          <div class="small">Periode: <strong>${start}</strong> - <strong>${end}</strong></div>
+          <div style="margin-top:12px;color:#a00">Tidak ada transaksi pada periode ini</div>
+        </div>
+      `;
+      return;
+    }
     
     let pemasukan = 0, pengeluaran = 0;
     data.forEach(t => {
@@ -1067,9 +1080,9 @@ async function generateReport() {
       <div class="card">
         <div class="small">Periode: <strong>${start}</strong> - <strong>${end}</strong></div>
         <div style="margin-top:8px;">
-          <div class="small">Total Pemasukan: <strong>Rp ${formatNumber(pemasukan)}</strong></div>
-          <div class="small">Total Pengeluaran: <strong>Rp ${formatNumber(pengeluaran)}</strong></div>
-          <div class="small">Saldo Akhir: <strong>Rp ${formatNumber(saldoAkhir)}</strong></div>
+          <div class="small">Total Pemasukan: <strong style="color:#0a8">Rp ${formatNumber(pemasukan)}</strong></div>
+          <div class="small">Total Pengeluaran: <strong style="color:#a00">Rp ${formatNumber(pengeluaran)}</strong></div>
+          <div class="small">Saldo Akhir: <strong style="color:${saldoAkhir >= 0 ? '#0a8' : '#a00'}">Rp ${formatNumber(saldoAkhir)}</strong></div>
         </div>
         <div style="margin-top:12px;overflow:auto;">
           <table>
@@ -1087,9 +1100,9 @@ async function generateReport() {
                 <tr>
                   <td>${r.tanggal}</td>
                   <td>${escapeHtml(r.anggota_nama)}</td>
-                  <td>${escapeHtml(r.jenis_nama)} (${r.kategori})</td>
+                  <td>${escapeHtml(r.jenis_nama)} <span style="color:${r.kategori === 'masuk' ? '#0a8' : '#a00'}">(${r.kategori})</span></td>
                   <td>Rp ${formatNumber(Number(r.nilai) || 0)}</td>
-                  <td>${escapeHtml(r.keterangan || '')}</td>
+                  <td>${escapeHtml(r.keterangan || '-')}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -1101,6 +1114,10 @@ async function generateReport() {
   } catch (err) {
     resultDiv.innerHTML = '<div class="small" style="color:#a00">Error: ' + err.message + '</div>';
   }
+}
+
+function exportToExcel() {
+  alert('Fitur ekspor Excel akan datang! Untuk sekarang, gunakan Print (Ctrl+P)');
 }
 
 // ===========================================
@@ -1123,6 +1140,7 @@ function formatNumber(n) {
 
 async function refreshAll() {
   try {
+    document.getElementById('status-info').innerText = 'Memuat data...';
     await Promise.all([
       loadAnggota(),
       loadJenis(),
@@ -1130,8 +1148,13 @@ async function refreshAll() {
       loadJurnal(),
       loadDashboard()
     ]);
+    document.getElementById('status-info').innerText = 'Data diperbarui';
+    setTimeout(() => {
+      document.getElementById('status-info').innerText = 'Aplikasi Koperasi Sekolah';
+    }, 2000);
   } catch (err) {
     debugLog("Refresh all error:", err);
+    document.getElementById('status-info').innerText = 'Error memuat data';
   }
 }
 
@@ -1153,12 +1176,14 @@ window.addEventListener('load', function() {
   document.getElementById('lap-start').value = firstDay.toISOString().slice(0, 10);
   document.getElementById('lap-end').value = today;
   
-  // Test API connection
+  // Auto-load initial data
+  setTimeout(() => {
+    refreshAll();
+  }, 1000);
+  
+  debugLog('Aplikasi Koperasi Sekolah siap!');
   debugLog('WEB_APP_URL:', WEB_APP_URL);
 });
-
-// Show login page initially
-showPage('login');
 
 </script>
 </body>
