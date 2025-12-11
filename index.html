@@ -37,12 +37,6 @@
         h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        .subtitle {
-            font-size: 1.1em;
-            opacity: 0.9;
         }
         
         .nav-tabs {
@@ -113,7 +107,7 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.3s ease;
         }
         
         .btn:hover {
@@ -127,16 +121,6 @@
         
         .btn-danger {
             background: #dc3545;
-        }
-        
-        .btn-success {
-            background: #28a745;
-        }
-        
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
         }
         
         .table-container {
@@ -168,22 +152,6 @@
             background: #f8f9fa;
         }
         
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        
-        .status-online {
-            background: #28a745;
-        }
-        
-        .status-offline {
-            background: #dc3545;
-        }
-        
         .message {
             padding: 15px;
             border-radius: 8px;
@@ -210,7 +178,24 @@
             background: #f8f9fa;
             border-radius: 8px;
             margin-bottom: 20px;
-            font-family: monospace;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .status-online {
+            background: #28a745;
+        }
+        
+        .status-offline {
+            background: #dc3545;
         }
     </style>
 </head>
@@ -218,7 +203,7 @@
     <div class="container">
         <header>
             <h1>🏫 Koperasi Sekolah</h1>
-            <div class="subtitle">Sistem Manajemen Koperasi Digital</div>
+            <p>Sistem Manajemen Koperasi Digital</p>
         </header>
         
         <div class="nav-tabs">
@@ -228,30 +213,30 @@
             <div class="tab" onclick="showTab('laporan')">📈 Laporan</div>
         </div>
         
-        <!-- Dashboard Tab -->
         <div id="dashboard" class="tab-content active">
             <h2>Dashboard</h2>
             <div class="api-status">
-                Status API: <span id="apiStatus">Mengecek...</span>
+                <span>Status API:</span>
+                <strong id="apiStatus">Mengecek...</strong>
                 <span class="status-indicator" id="apiStatusIndicator"></span>
             </div>
             
             <div id="message" class="message"></div>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 30px;">
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 30px;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px;">
                     <h3>Total Anggota</h3>
-                    <p id="totalAnggota" style="font-size: 2.5em; margin: 10px 0;">0</p>
+                    <p id="totalAnggota" style="font-size: 2em; margin: 10px 0;">0</p>
                 </div>
                 
-                <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 25px; border-radius: 10px;">
+                <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 10px;">
                     <h3>Total Transaksi</h3>
-                    <p id="totalTransaksi" style="font-size: 2.5em; margin: 10px 0;">0</p>
+                    <p id="totalTransaksi" style="font-size: 2em; margin: 10px 0;">0</p>
                 </div>
                 
-                <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 25px; border-radius: 10px;">
+                <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 10px;">
                     <h3>Total Saldo</h3>
-                    <p id="totalSaldo" style="font-size: 2.5em; margin: 10px 0;">Rp 0</p>
+                    <p id="totalSaldo" style="font-size: 2em; margin: 10px 0;">Rp 0</p>
                 </div>
             </div>
             
@@ -261,10 +246,8 @@
             </div>
         </div>
         
-        <!-- Anggota Tab -->
         <div id="anggota" class="tab-content">
             <h2>Manajemen Anggota</h2>
-            
             <div id="anggotaMessage" class="message"></div>
             
             <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
@@ -286,7 +269,7 @@
             
             <h3>Daftar Anggota</h3>
             <div class="table-container">
-                <table id="anggotaTable">
+                <table>
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -303,10 +286,8 @@
             </div>
         </div>
         
-        <!-- Transaksi Tab -->
         <div id="transaksi" class="tab-content">
             <h2>Transaksi Koperasi</h2>
-            
             <div id="transaksiMessage" class="message"></div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
@@ -346,7 +327,7 @@
                 <div>
                     <h3>Riwayat Transaksi</h3>
                     <div class="table-container">
-                        <table id="transaksiTable">
+                        <table>
                             <thead>
                                 <tr>
                                     <th>Tanggal</th>
@@ -366,7 +347,6 @@
             </div>
         </div>
         
-        <!-- Laporan Tab -->
         <div id="laporan" class="tab-content">
             <h2>Laporan Koperasi</h2>
             
@@ -387,7 +367,7 @@
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
                     <h3>Saldo per Anggota</h3>
                     <div class="table-container">
-                        <table id="saldoTable">
+                        <table>
                             <thead>
                                 <tr>
                                     <th>Nama Anggota</th>
@@ -404,7 +384,7 @@
             
             <h3>Laporan Transaksi</h3>
             <div class="table-container">
-                <table id="laporanTable">
+                <table>
                     <thead>
                         <tr>
                             <th>Tanggal</th>
@@ -425,10 +405,10 @@
 
     <script>
         // ============================================================================
-        // KONFIGURASI APLIKASI
+        // KONFIGURASI
         // ============================================================================
+        // GANTI INI DENGAN URL DEPLOYMENT ANDA
         const API_URL = 'https://script.google.com/macros/s/AKfycbwc3EvcSUxCNriiV-87vMYQzdeIy0b0DjjMpzLa6jHrljw4Xf7Y1b2e-pwONkN0XOVe/exec';
-        // Ganti dengan URL deployment Anda setelah deploy
         
         let anggotaData = [];
         let jenisTransaksiData = [];
@@ -447,23 +427,21 @@
         });
         
         function showTab(tabName) {
-            // Hide all tabs
+            // Sembunyikan semua tab
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
             
-            // Remove active class from all tab buttons
+            // Hapus active dari semua tab button
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
             
-            // Show selected tab
+            // Tampilkan tab yang dipilih
             document.getElementById(tabName).classList.add('active');
-            
-            // Add active class to clicked tab button
             event.target.classList.add('active');
             
-            // Refresh data based on tab
+            // Refresh data berdasarkan tab
             if (tabName === 'dashboard') {
                 refreshDashboard();
             } else if (tabName === 'anggota') {
@@ -477,7 +455,7 @@
         }
         
         // ============================================================================
-        // API COMMUNICATION
+        // FUNGSI API
         // ============================================================================
         
         async function callAPI(mode, data = {}) {
@@ -489,21 +467,16 @@
                 
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    mode: 'cors',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(payload)
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
                 return await response.json();
             } catch (error) {
                 console.error('API Error:', error);
-                showMessage('error', 'Koneksi ke server gagal: ' + error.message);
+                showMessage('error', 'Koneksi ke server gagal');
                 return { success: false, error: error.message };
             }
         }
@@ -512,8 +485,18 @@
             fetch(API_URL)
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('apiStatus').textContent = 'Online';
-                    document.getElementById('apiStatusIndicator').className = 'status-indicator status-online';
+                    const statusElement = document.getElementById('apiStatus');
+                    const indicator = document.getElementById('apiStatusIndicator');
+                    
+                    if (data.status === "API OK") {
+                        statusElement.textContent = 'Online ✓';
+                        statusElement.style.color = 'green';
+                        indicator.className = 'status-indicator status-online';
+                        showMessage('success', 'API terhubung dengan baik!');
+                    } else {
+                        statusElement.textContent = 'Error';
+                        indicator.className = 'status-indicator status-offline';
+                    }
                 })
                 .catch(error => {
                     document.getElementById('apiStatus').textContent = 'Offline';
@@ -545,7 +528,7 @@
                         renderAnggotaDropdown();
                         updateDashboard();
                     } else {
-                        showMessage('error', 'Gagal memuat data anggota: ' + data.error);
+                        showMessage('error', 'Gagal memuat data anggota', 'anggotaMessage');
                     }
                 });
         }
@@ -630,10 +613,8 @@
                     <td>${anggota.alamat || '-'}</td>
                     <td>${anggota.no_hp || '-'}</td>
                     <td>
-                        <div class="btn-group">
-                            <button class="btn btn-secondary" onclick="editAnggota('${anggota.id}')">✏️ Edit</button>
-                            <button class="btn btn-danger" onclick="hapusAnggota('${anggota.id}')">🗑️ Hapus</button>
-                        </div>
+                        <button class="btn btn-secondary" onclick="editAnggota('${anggota.id}')">✏️ Edit</button>
+                        <button class="btn btn-danger" onclick="hapusAnggota('${anggota.id}')">🗑️ Hapus</button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -873,13 +854,9 @@
         }
         
         function updateDashboard() {
-            // Total Anggota
             document.getElementById('totalAnggota').textContent = anggotaData.length;
-            
-            // Total Transaksi
             document.getElementById('totalTransaksi').textContent = transaksiData.length;
             
-            // Total Saldo
             let totalSaldo = 0;
             transaksiData.forEach(t => {
                 const nilai = Number(t.nilai) || 0;
@@ -906,13 +883,12 @@
             element.textContent = text;
             element.className = `message ${type}`;
             
-            // Auto hide after 5 seconds
             setTimeout(() => {
                 element.style.display = 'none';
             }, 5000);
         }
         
-        // Set default date values
+        // Set tanggal default saat halaman dibuka
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('tanggalTransaksi').value = today;
         document.getElementById('fromDate').value = today;
@@ -920,4 +896,3 @@
     </script>
 </body>
 </html>
-
