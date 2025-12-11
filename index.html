@@ -652,10 +652,7 @@
                     <label>No. Telepon/HP</label>
                     <input type="text" id="noHpAnggota" placeholder="Contoh: 081234567890">
                 </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="emailAnggota" placeholder="nama@email.com">
-                </div>
+                <!-- HAPUS FIELD EMAIL KARENA TIDAK DIDUKUNG API -->
                 <button class="btn btn-success" onclick="tambahAnggota()">
                     <i class="fas fa-save"></i> Simpan Anggota
                 </button>
@@ -676,13 +673,12 @@
                             <th>Nama</th>
                             <th>Kontak</th>
                             <th>Alamat</th>
-                            <th>Status</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="anggotaList">
                         <tr>
-                            <td colspan="6" class="empty-state">
+                            <td colspan="5" class="empty-state">
                                 <i class="fas fa-users"></i>
                                 <p>Belum ada data anggota. Tambahkan anggota baru!</p>
                             </td>
@@ -807,13 +803,12 @@
                             <thead>
                                 <tr>
                                     <th>Nama Anggota</th>
-                                    <th>Jumlah Transaksi</th>
                                     <th>Saldo</th>
                                 </tr>
                             </thead>
                             <tbody id="saldoList">
                                 <tr>
-                                    <td colspan="3" class="loading">
+                                    <td colspan="2" class="loading">
                                         <i class="fas fa-spinner fa-spin"></i> Memuat data saldo...
                                     </td>
                                 </tr>
@@ -872,30 +867,7 @@
             loadData();
             setDefaultDates();
             updateLastUpdate();
-            setupEventListeners();
         });
-        
-        function setupEventListeners() {
-            // Enter key untuk form tambah anggota
-            document.getElementById('namaAnggota').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') tambahAnggota();
-            });
-            
-            // Enter key untuk form tambah transaksi
-            document.getElementById('nilaiTransaksi').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') tambahTransaksi();
-            });
-            
-            // Real-time validation untuk nomor HP
-            document.getElementById('noHpAnggota').addEventListener('input', function(e) {
-                this.value = this.value.replace(/[^0-9+]/g, '');
-            });
-            
-            // Real-time validation untuk nilai transaksi
-            document.getElementById('nilaiTransaksi').addEventListener('input', function(e) {
-                if (this.value < 0) this.value = 0;
-            });
-        }
         
         function showTab(tabName) {
             // Update tabs
@@ -922,7 +894,6 @@
                 case 'laporan':
                     loadSaldo();
                     loadLaporan();
-                    setupFilterDropdowns();
                     break;
             }
             
@@ -933,8 +904,6 @@
         // ==================== FUNGSI API ====================
         
         async function callAPI(mode, data = {}) {
-            showLoading(true, mode);
-            
             try {
                 // Buat URL dengan parameter GET
                 let url = API_URL + '?mode=' + encodeURIComponent(mode);
@@ -948,12 +917,10 @@
                 
                 console.log('Fetching URL:', url);
                 
+                // HAPUS HEADERS CACHE CONTROL YANG MENYEBABKAN MASALAH
                 const response = await fetch(url, {
                     method: 'GET',
-                    headers: {
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache'
-                    }
+                    // Tidak perlu headers khusus untuk GET
                 });
                 
                 if (!response.ok) {
@@ -961,46 +928,12 @@
                 }
                 
                 const result = await response.json();
-                showLoading(false, mode);
                 return result;
                 
             } catch (error) {
                 console.error('API Error:', error);
-                showLoading(false, mode);
                 showMessage('error', 'Koneksi ke server gagal: ' + error.message);
                 return { success: false, error: error.message };
-            }
-        }
-        
-        function showLoading(show, context = 'global') {
-            const loadingElements = document.querySelectorAll('.loading');
-            if (show) {
-                // Show loading state
-                if (context === 'anggota') {
-                    document.getElementById('anggotaList').innerHTML = `
-                        <tr>
-                            <td colspan="6" class="loading">
-                                <i class="fas fa-spinner fa-spin"></i> Memuat data anggota...
-                            </td>
-                        </tr>
-                    `;
-                } else if (context === 'transaksi') {
-                    document.getElementById('transaksiList').innerHTML = `
-                        <tr>
-                            <td colspan="6" class="loading">
-                                <i class="fas fa-spinner fa-spin"></i> Memuat data transaksi...
-                            </td>
-                        </tr>
-                    `;
-                } else if (context === 'laporan') {
-                    document.getElementById('laporanList').innerHTML = `
-                        <tr>
-                            <td colspan="6" class="loading">
-                                <i class="fas fa-spinner fa-spin"></i> Memuat laporan...
-                            </td>
-                        </tr>
-                    `;
-                }
             }
         }
         
@@ -1008,7 +941,7 @@
             document.getElementById('apiStatus').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengecek...';
             document.getElementById('apiStatus').className = 'status-checking';
             
-            fetch(API_URL + '?mode=test', { cache: 'no-store' })
+            fetch(API_URL + '?mode=test')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success || data.status === "API OK") {
@@ -1054,7 +987,6 @@
                         renderAnggotaTable();
                         renderAnggotaDropdown();
                         updateDashboard();
-                        updateFilterDropdowns();
                     } else {
                         showMessage('error', 'Gagal memuat data anggota: ' + (data.error || 'Unknown error'), 'anggotaMessage');
                     }
@@ -1065,18 +997,10 @@
             const nama = document.getElementById('namaAnggota').value.trim();
             const alamat = document.getElementById('alamatAnggota').value.trim();
             const noHp = document.getElementById('noHpAnggota').value.trim();
-            const email = document.getElementById('emailAnggota').value.trim();
             
             if (!nama) {
                 showMessage('error', 'Nama anggota harus diisi!', 'anggotaMessage');
                 document.getElementById('namaAnggota').focus();
-                return;
-            }
-            
-            // Validasi email jika diisi
-            if (email && !validateEmail(email)) {
-                showMessage('error', 'Format email tidak valid!', 'anggotaMessage');
-                document.getElementById('emailAnggota').focus();
                 return;
             }
             
@@ -1085,8 +1009,7 @@
             callAPI('addAnggota', {
                 nama: nama,
                 alamat: alamat,
-                no_hp: noHp,
-                email: email
+                no_hp: noHp
             }).then(data => {
                 if (data.success) {
                     showMessage('success', data.message || 'Anggota berhasil ditambahkan!', 'anggotaMessage');
@@ -1094,7 +1017,6 @@
                     document.getElementById('namaAnggota').value = '';
                     document.getElementById('alamatAnggota').value = '';
                     document.getElementById('noHpAnggota').value = '';
-                    document.getElementById('emailAnggota').value = '';
                     // Reload data
                     loadAnggota();
                 } else {
@@ -1113,19 +1035,12 @@
             
             const alamatBaru = prompt('Edit Alamat:', anggota.alamat || '');
             const noHpBaru = prompt('Edit No. HP:', anggota.no_hp || '');
-            const emailBaru = prompt('Edit Email:', anggota.email || '');
-            
-            if (emailBaru && !validateEmail(emailBaru)) {
-                showMessage('error', 'Format email tidak valid!', 'anggotaMessage');
-                return;
-            }
             
             callAPI('updateAnggota', {
                 id: id,
                 nama: namaBaru || anggota.nama,
                 alamat: alamatBaru || anggota.alamat,
-                no_hp: noHpBaru || anggota.no_hp,
-                email: emailBaru || anggota.email
+                no_hp: noHpBaru || anggota.no_hp
             }).then(data => {
                 if (data.success) {
                     showMessage('success', data.message || 'Data anggota berhasil diperbarui!', 'anggotaMessage');
@@ -1157,7 +1072,7 @@
             if (!anggotaData || anggotaData.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="empty-state">
+                        <td colspan="5" class="empty-state">
                             <i class="fas fa-users"></i>
                             <p>Belum ada data anggota. Tambahkan anggota baru!</p>
                         </td>
@@ -1176,17 +1091,9 @@
                     <td><strong>#${anggota.id}</strong></td>
                     <td>
                         <div><strong>${anggota.nama}</strong></div>
-                        <small class="text-muted">${anggota.email || 'Tidak ada email'}</small>
                     </td>
-                    <td>
-                        <div>${anggota.no_hp || '-'}</div>
-                        <small class="text-muted">${anggota.email || ''}</small>
-                    </td>
+                    <td>${anggota.no_hp || '-'}</td>
                     <td>${anggota.alamat || '-'}</td>
-                    <td>
-                        <span class="status-dot status-online"></span>
-                        <small>Aktif</small>
-                    </td>
                     <td>
                         <div class="btn-group">
                             <button class="btn btn-sm" onclick="editAnggota('${anggota.id}')" title="Edit">
@@ -1218,7 +1125,7 @@
             anggotaData.forEach(anggota => {
                 const option = document.createElement('option');
                 option.value = anggota.id;
-                option.textContent = `${anggota.nama} (${anggota.id})`;
+                option.textContent = `${anggota.nama}`;
                 option.setAttribute('data-nama', anggota.nama);
                 select.appendChild(option);
             });
@@ -1232,14 +1139,16 @@
                     if (data.success) {
                         jenisTransaksiData = data.data || [];
                         renderJenisDropdown();
-                        updateJenisFilterDropdown();
                     }
                 });
         }
         
         function renderJenisDropdown() {
             const select = document.getElementById('jenisTransaksi');
+            const filterSelect = document.getElementById('filterJenis');
+            
             select.innerHTML = '<option value="">Pilih Jenis Transaksi</option>';
+            filterSelect.innerHTML = '<option value="">Semua Jenis</option>';
             
             if (!jenisTransaksiData || jenisTransaksiData.length === 0) {
                 const option = document.createElement('option');
@@ -1251,9 +1160,10 @@
             }
             
             jenisTransaksiData.forEach(jenis => {
+                // Untuk dropdown transaksi
                 const option = document.createElement('option');
                 option.value = jenis.id;
-                option.textContent = `${jenis.nama_jenis} (${jenis.kategori})`;
+                option.textContent = `${jenis.nama_jenis}`;
                 option.setAttribute('data-kategori', jenis.kategori);
                 option.setAttribute('data-nama', jenis.nama_jenis);
                 
@@ -1265,6 +1175,12 @@
                 }
                 
                 select.appendChild(option);
+                
+                // Untuk filter laporan
+                const filterOption = document.createElement('option');
+                filterOption.value = jenis.id;
+                filterOption.textContent = `${jenis.nama_jenis}`;
+                filterSelect.appendChild(filterOption);
             });
         }
         
@@ -1388,12 +1304,10 @@
                 row.innerHTML = `
                     <td>
                         <div>${formatDate(transaksi.tanggal)}</div>
-                        <small class="text-muted">${formatTime(transaksi.tanggal)}</small>
                     </td>
                     <td>${transaksi.anggota_nama}</td>
                     <td>
                         <span class="${isMasuk ? 'text-success' : 'text-danger'}">
-                            <i class="fas ${isMasuk ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
                             ${transaksi.jenis_nama}
                         </span>
                     </td>
@@ -1413,39 +1327,6 @@
         
         // ==================== LAPORAN FUNCTIONS ====================
         
-        function setupFilterDropdowns() {
-            updateFilterDropdowns();
-            updateJenisFilterDropdown();
-        }
-        
-        function updateFilterDropdowns() {
-            const select = document.getElementById('filterAnggota');
-            select.innerHTML = '<option value="">Semua Anggota</option>';
-            
-            if (anggotaData && anggotaData.length > 0) {
-                anggotaData.forEach(anggota => {
-                    const option = document.createElement('option');
-                    option.value = anggota.id;
-                    option.textContent = anggota.nama;
-                    select.appendChild(option);
-                });
-            }
-        }
-        
-        function updateJenisFilterDropdown() {
-            const select = document.getElementById('filterJenis');
-            select.innerHTML = '<option value="">Semua Jenis</option>';
-            
-            if (jenisTransaksiData && jenisTransaksiData.length > 0) {
-                jenisTransaksiData.forEach(jenis => {
-                    const option = document.createElement('option');
-                    option.value = jenis.id;
-                    option.textContent = `${jenis.nama_jenis} (${jenis.kategori})`;
-                    select.appendChild(option);
-                });
-            }
-        }
-        
         function loadSaldo() {
             callAPI('saldoPerAnggota')
                 .then(data => {
@@ -1459,13 +1340,11 @@
             const fromDate = document.getElementById('fromDate').value;
             const toDate = document.getElementById('toDate').value;
             const filterJenis = document.getElementById('filterJenis').value;
-            const filterAnggota = document.getElementById('filterAnggota').value;
             
             callAPI('laporan', {
                 from: fromDate,
                 to: toDate,
-                jenis_id: filterJenis,
-                anggota_id: filterAnggota
+                jenis_id: filterJenis
             }).then(data => {
                 if (data.success) {
                     laporanData = data.data || [];
@@ -1577,7 +1456,7 @@
             if (!data || data.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="3" class="empty-state">
+                        <td colspan="2" class="empty-state">
                             <i class="fas fa-wallet"></i>
                             <p>Belum ada data saldo</p>
                         </td>
@@ -1591,11 +1470,9 @@
             data.forEach(item => {
                 const row = document.createElement('tr');
                 const saldoFormatted = formatCurrency(item.saldo);
-                const transaksiCount = item.jumlah_transaksi || 0;
                 
                 row.innerHTML = `
                     <td>${item.nama}</td>
-                    <td>${transaksiCount}</td>
                     <td class="${item.saldo >= 0 ? 'text-success' : 'text-danger'}">
                         <strong>${saldoFormatted}</strong>
                     </td>
@@ -1752,11 +1629,6 @@
             document.getElementById('lastUpdate').textContent = `${formattedDate} ${formattedTime}`;
         }
         
-        function validateEmail(email) {
-            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(email);
-        }
-        
         function formatCurrency(amount) {
             return new Intl.NumberFormat('id-ID', {
                 style: 'currency',
@@ -1772,15 +1644,6 @@
                 day: '2-digit',
                 month: '2-digit',
                 year: 'numeric'
-            });
-        }
-        
-        function formatTime(dateString) {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            return date.toLocaleTimeString('id-ID', {
-                hour: '2-digit',
-                minute: '2-digit'
             });
         }
         
