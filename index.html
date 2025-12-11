@@ -72,6 +72,8 @@
             display: flex; 
             background: var(--secondary-color);
             border-bottom: 3px solid var(--accent-color);
+            overflow-x: auto;
+            white-space: nowrap;
         }
 
         .tab { 
@@ -87,6 +89,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-shrink: 0;
         }
 
         .tab:before {
@@ -241,6 +244,14 @@
             background: #d68910; 
         }
 
+        .btn-purple {
+            background: #9b59b6;
+        }
+
+        .btn-purple:hover {
+            background: #8e44ad;
+        }
+
         .btn-sm {
             padding: 8px 15px;
             font-size: 0.9rem;
@@ -388,6 +399,7 @@
         .card-success { border-top-color: var(--success-color); }
         .card-danger { border-top-color: var(--danger-color); }
         .card-warning { border-top-color: var(--warning-color); }
+        .card-purple { border-top-color: #9b59b6; }
 
         .card h3 {
             font-size: 1.1rem;
@@ -430,6 +442,26 @@
             padding: 25px; 
             border-radius: 8px;
             border: 1px solid #e9ecef;
+        }
+
+        /* ==================== CATEGORY BADGES ==================== */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-masuk {
+            background: #d5f4e6;
+            color: #27ae60;
+        }
+
+        .badge-keluar {
+            background: #fdeaea;
+            color: #e74c3c;
         }
 
         /* ==================== LOADING & EMPTY STATES ==================== */
@@ -524,6 +556,7 @@
         .text-danger { color: var(--danger-color); }
         .text-warning { color: var(--warning-color); }
         .text-info { color: var(--info-color); }
+        .text-purple { color: #9b59b6; }
         .text-muted { color: #95a5a6; }
         .mb-20 { margin-bottom: 20px; }
         .mt-20 { margin-top: 20px; }
@@ -572,6 +605,9 @@
             <div class="tab" onclick="showTab('anggota')">
                 <i class="fas fa-users"></i> Anggota
             </div>
+            <div class="tab" onclick="showTab('jenis')">
+                <i class="fas fa-tags"></i> Jenis Transaksi
+            </div>
             <div class="tab" onclick="showTab('transaksi')">
                 <i class="fas fa-exchange-alt"></i> Transaksi
             </div>
@@ -611,9 +647,9 @@
                 </div>
                 
                 <div class="card card-warning">
-                    <h3><i class="fas fa-chart-line"></i> Transaksi Hari Ini</h3>
-                    <p class="card-value" id="transaksiHariIni">0</p>
-                    <p class="card-footer">Transaksi tanggal <span id="todayDate"></span></p>
+                    <h3><i class="fas fa-tags"></i> Jenis Transaksi</h3>
+                    <p class="card-value" id="totalJenis">0</p>
+                    <p class="card-footer">Jenis transaksi tersedia</p>
                 </div>
             </div>
             
@@ -652,7 +688,6 @@
                     <label>No. Telepon/HP</label>
                     <input type="text" id="noHpAnggota" placeholder="Contoh: 081234567890">
                 </div>
-                <!-- HAPUS FIELD EMAIL KARENA TIDAK DIDUKUNG API -->
                 <button class="btn btn-success" onclick="tambahAnggota()">
                     <i class="fas fa-save"></i> Simpan Anggota
                 </button>
@@ -685,6 +720,66 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+        
+        <!-- Jenis Transaksi -->
+        <div id="jenis" class="tab-content">
+            <h2><i class="fas fa-tags"></i> Manajemen Jenis Transaksi</h2>
+            <div id="jenisMessage" class="message"></div>
+            
+            <div class="grid-2-col">
+                <div class="form-section">
+                    <h3><i class="fas fa-plus-circle"></i> Tambah Jenis Transaksi</h3>
+                    <div class="form-group">
+                        <label class="required">Nama Jenis</label>
+                        <input type="text" id="namaJenis" placeholder="Contoh: Simpanan Pokok">
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Kategori</label>
+                        <select id="kategoriJenis">
+                            <option value="">Pilih Kategori</option>
+                            <option value="masuk">Pemasukan (Masuk)</option>
+                            <option value="keluar">Pengeluaran (Keluar)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Deskripsi</label>
+                        <textarea id="deskripsiJenis" placeholder="Deskripsi jenis transaksi (opsional)"></textarea>
+                    </div>
+                    <button class="btn btn-purple btn-block" onclick="tambahJenis()">
+                        <i class="fas fa-plus"></i> Tambah Jenis
+                    </button>
+                </div>
+                
+                <div>
+                    <div class="d-flex justify-between align-center mb-20">
+                        <h3><i class="fas fa-list"></i> Daftar Jenis Transaksi</h3>
+                        <div class="text-muted">
+                            <span id="jenisCount">0</span> jenis ditemukan
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nama Jenis</th>
+                                    <th>Kategori</th>
+                                    <th>Deskripsi</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jenisList">
+                                <tr>
+                                    <td colspan="4" class="loading">
+                                        <i class="fas fa-spinner fa-spin"></i> Memuat data jenis transaksi...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -887,6 +982,9 @@
                 case 'anggota':
                     loadAnggota();
                     break;
+                case 'jenis':
+                    loadJenisTransaksi();
+                    break;
                 case 'transaksi':
                     loadTransaksi();
                     loadJenisTransaksi();
@@ -917,10 +1015,8 @@
                 
                 console.log('Fetching URL:', url);
                 
-                // HAPUS HEADERS CACHE CONTROL YANG MENYEBABKAN MASALAH
                 const response = await fetch(url, {
                     method: 'GET',
-                    // Tidak perlu headers khusus untuk GET
                 });
                 
                 if (!response.ok) {
@@ -1111,7 +1207,10 @@
         
         function renderAnggotaDropdown() {
             const select = document.getElementById('anggotaTransaksi');
+            const filterSelect = document.getElementById('filterAnggota');
+            
             select.innerHTML = '<option value="">Pilih Anggota</option>';
+            filterSelect.innerHTML = '<option value="">Semua Anggota</option>';
             
             if (!anggotaData || anggotaData.length === 0) {
                 const option = document.createElement('option');
@@ -1128,6 +1227,11 @@
                 option.textContent = `${anggota.nama}`;
                 option.setAttribute('data-nama', anggota.nama);
                 select.appendChild(option);
+                
+                const filterOption = document.createElement('option');
+                filterOption.value = anggota.id;
+                filterOption.textContent = `${anggota.nama}`;
+                filterSelect.appendChild(filterOption);
             });
         }
         
@@ -1138,9 +1242,141 @@
                 .then(data => {
                     if (data.success) {
                         jenisTransaksiData = data.data || [];
+                        renderJenisTable();
                         renderJenisDropdown();
+                        updateDashboard();
+                    } else {
+                        showMessage('error', 'Gagal memuat data jenis transaksi: ' + (data.error || 'Unknown error'), 'jenisMessage');
                     }
                 });
+        }
+        
+        function tambahJenis() {
+            const nama = document.getElementById('namaJenis').value.trim();
+            const kategori = document.getElementById('kategoriJenis').value;
+            const deskripsi = document.getElementById('deskripsiJenis').value.trim();
+            
+            if (!nama) {
+                showMessage('error', 'Nama jenis harus diisi!', 'jenisMessage');
+                document.getElementById('namaJenis').focus();
+                return;
+            }
+            
+            if (!kategori) {
+                showMessage('error', 'Kategori harus dipilih!', 'jenisMessage');
+                document.getElementById('kategoriJenis').focus();
+                return;
+            }
+            
+            showMessage('info', 'Menyimpan jenis transaksi...', 'jenisMessage');
+            
+            callAPI('addJenis', {
+                nama_jenis: nama,
+                kategori: kategori,
+                deskripsi: deskripsi
+            }).then(data => {
+                if (data.success) {
+                    showMessage('success', data.message || 'Jenis transaksi berhasil ditambahkan!', 'jenisMessage');
+                    // Clear form
+                    document.getElementById('namaJenis').value = '';
+                    document.getElementById('kategoriJenis').value = '';
+                    document.getElementById('deskripsiJenis').value = '';
+                    // Reload data
+                    loadJenisTransaksi();
+                } else {
+                    showMessage('error', data.error || 'Gagal menambahkan jenis transaksi', 'jenisMessage');
+                }
+            });
+        }
+        
+        function editJenis(id) {
+            const jenis = jenisTransaksiData.find(j => j.id === id);
+            if (!jenis) return;
+            
+            // Create edit form
+            const namaBaru = prompt('Edit Nama Jenis:', jenis.nama_jenis);
+            if (namaBaru === null) return;
+            
+            const kategoriBaru = prompt('Edit Kategori (masuk/keluar):', jenis.kategori);
+            if (kategoriBaru === null) return;
+            
+            const deskripsiBaru = prompt('Edit Deskripsi:', jenis.deskripsi || '');
+            
+            callAPI('updateJenis', {
+                id: id,
+                nama_jenis: namaBaru || jenis.nama_jenis,
+                kategori: kategoriBaru || jenis.kategori,
+                deskripsi: deskripsiBaru || jenis.deskripsi
+            }).then(data => {
+                if (data.success) {
+                    showMessage('success', data.message || 'Jenis transaksi berhasil diperbarui!', 'jenisMessage');
+                    loadJenisTransaksi();
+                } else {
+                    showMessage('error', data.error || 'Gagal memperbarui jenis transaksi', 'jenisMessage');
+                }
+            });
+        }
+        
+        function hapusJenis(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus jenis transaksi ini?\nTransaksi yang menggunakan jenis ini akan terpengaruh.')) return;
+            
+            callAPI('deleteJenis', { id: id })
+                .then(data => {
+                    if (data.success) {
+                        showMessage('success', data.message || 'Jenis transaksi berhasil dihapus!', 'jenisMessage');
+                        loadJenisTransaksi();
+                    } else {
+                        showMessage('error', data.error || 'Gagal menghapus jenis transaksi', 'jenisMessage');
+                    }
+                });
+        }
+        
+        function renderJenisTable() {
+            const tbody = document.getElementById('jenisList');
+            const countElement = document.getElementById('jenisCount');
+            
+            if (!jenisTransaksiData || jenisTransaksiData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <i class="fas fa-tags"></i>
+                            <p>Belum ada jenis transaksi. Tambahkan jenis baru!</p>
+                        </td>
+                    </tr>
+                `;
+                countElement.textContent = '0';
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            countElement.textContent = jenisTransaksiData.length;
+            
+            jenisTransaksiData.forEach(jenis => {
+                const row = document.createElement('tr');
+                const badgeClass = jenis.kategori === 'masuk' ? 'badge-masuk' : 'badge-keluar';
+                const badgeText = jenis.kategori === 'masuk' ? 'Pemasukan' : 'Pengeluaran';
+                
+                row.innerHTML = `
+                    <td>
+                        <div><strong>${jenis.nama_jenis}</strong></div>
+                    </td>
+                    <td>
+                        <span class="badge ${badgeClass}">${badgeText}</span>
+                    </td>
+                    <td>${jenis.deskripsi || '-'}</td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm" onclick="editJenis('${jenis.id}')" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="hapusJenis('${jenis.id}')" title="Hapus">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
         }
         
         function renderJenisDropdown() {
@@ -1340,11 +1576,13 @@
             const fromDate = document.getElementById('fromDate').value;
             const toDate = document.getElementById('toDate').value;
             const filterJenis = document.getElementById('filterJenis').value;
+            const filterAnggota = document.getElementById('filterAnggota').value;
             
             callAPI('laporan', {
                 from: fromDate,
                 to: toDate,
-                jenis_id: filterJenis
+                jenis_id: filterJenis,
+                anggota_id: filterAnggota
             }).then(data => {
                 if (data.success) {
                     laporanData = data.data || [];
@@ -1558,11 +1796,11 @@
             // Update counters
             document.getElementById('totalAnggota').textContent = anggotaData.length;
             document.getElementById('totalTransaksi').textContent = transaksiData.length;
+            document.getElementById('totalJenis').textContent = jenisTransaksiData.length;
             
             // Calculate today's transactions
             const today = new Date().toISOString().split('T')[0];
             const todayTransactions = transaksiData.filter(t => t.tanggal === today).length;
-            document.getElementById('transaksiHariIni').textContent = todayTransactions;
             document.getElementById('todayDate').textContent = formatDate(today);
             
             // Calculate total balance
@@ -1650,7 +1888,7 @@
         // Check URL hash on page load
         window.addEventListener('load', function() {
             const hash = window.location.hash.substring(1);
-            if (hash && ['dashboard', 'anggota', 'transaksi', 'laporan'].includes(hash)) {
+            if (hash && ['dashboard', 'anggota', 'jenis', 'transaksi', 'laporan'].includes(hash)) {
                 const tabElement = document.querySelector(`.tab[onclick*="${hash}"]`);
                 if (tabElement) {
                     tabElement.click();
