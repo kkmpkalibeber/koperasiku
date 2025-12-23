@@ -1579,50 +1579,97 @@
                 });
         }
         
-        function loadLaporan() {
-            const fromDate = document.getElementById('fromDate').value;
-            const toDate = document.getElementById('toDate').value;
-            const filterJenis = document.getElementById('filterJenis').value;
-            const filterAnggota = document.getElementById('filterAnggota').value;
+  function loadLaporan() {
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
+    const filterJenis = document.getElementById('filterJenis').value;
+    const filterAnggota = document.getElementById('filterAnggota').value;
+    
+    // Validasi tanggal wajib
+    if (!fromDate || !toDate) {
+        showMessage('warning', 'Silakan pilih tanggal mulai dan tanggal akhir terlebih dahulu!');
+        return;
+    }
+    
+    // Validasi rentang tanggal
+    if (new Date(fromDate) > new Date(toDate)) {
+        showMessage('warning', 'Tanggal mulai tidak boleh lebih besar dari tanggal akhir!');
+        return;
+    }
+    
+    showMessage('info', 'Memuat data laporan...');
+    
+    // Tampilkan loading state
+    const tbody = document.getElementById('laporanList');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="6" class="loading">
+                <i class="fas fa-spinner fa-spin"></i> Memuat data laporan...
+            </td>
+        </tr>
+    `;
+    
+    // Debug: tampilkan parameter yang dikirim
+    console.log('Parameter Laporan:', {
+        from: fromDate,
+        to: toDate,
+        jenis_id: filterJenis,
+        anggota_id: filterAnggota
+    });
+    
+    callAPI('laporan', {
+        from: fromDate,
+        to: toDate,
+        jenis_id: filterJenis,
+        anggota_id: filterAnggota
+    }).then(data => {
+        console.log('Response dari API laporan:', data);
+        
+        if (data.success) {
+            laporanData = data.data || [];
+            console.log('Data laporan diterima:', laporanData.length, 'records');
             
-            // Validasi tanggal wajib - PERBAIKAN: Validasi ditambahkan
-            if (!fromDate || !toDate) {
-                showMessage('warning', 'Silakan pilih tanggal mulai dan tanggal akhir terlebih dahulu!');
-                return;
+            renderLaporanTable(laporanData);
+            
+            // Enable/disable export button
+            const exportBtn = document.getElementById('exportBtn');
+            exportBtn.disabled = laporanData.length === 0;
+            
+            if (laporanData.length === 0) {
+                showMessage('warning', 'Tidak ada transaksi pada periode yang dipilih');
+            } else {
+                showMessage('success', `Data laporan berhasil dimuat: ${laporanData.length} transaksi ditemukan`);
             }
+        } else {
+            console.error('API Error:', data.error);
+            showMessage('error', 'Gagal memuat data laporan: ' + (data.error || 'Unknown error'));
             
-            // Validasi rentang tanggal
-            if (new Date(fromDate) > new Date(toDate)) {
-                showMessage('warning', 'Tanggal mulai tidak boleh lebih besar dari tanggal akhir!');
-                return;
-            }
-            
-            showMessage('info', 'Memuat data laporan...');
-            
-            callAPI('laporan', {
-                from: fromDate,
-                to: toDate,
-                jenis_id: filterJenis,
-                anggota_id: filterAnggota
-            }).then(data => {
-                if (data.success) {
-                    laporanData = data.data || [];
-                    renderLaporanTable(laporanData);
-                    
-                    // Enable/disable export button
-                    const exportBtn = document.getElementById('exportBtn');
-                    exportBtn.disabled = laporanData.length === 0;
-                    
-                    if (laporanData.length === 0) {
-                        showMessage('warning', 'Tidak ada transaksi pada periode yang dipilih');
-                    } else {
-                        showMessage('success', `Data laporan berhasil dimuat: ${laporanData.length} transaksi ditemukan`);
-                    }
-                } else {
-                    showMessage('error', 'Gagal memuat data laporan: ' + (data.error || 'Unknown error'));
-                }
-            });
+            // Reset tampilan
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Gagal memuat data laporan</p>
+                        <small>${data.error || 'Terjadi kesalahan'}</small>
+                    </td>
+                </tr>
+            `;
         }
+    }).catch(error => {
+        console.error('Fetch Error:', error);
+        showMessage('error', 'Gagal terhubung ke server: ' + error.message);
+        
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="empty-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Gagal terhubung ke server</p>
+                    <small>${error.message}</small>
+                </td>
+            </tr>
+        `;
+    });
+}
         
         function exportLaporan() {
             if (laporanData.length === 0) {
@@ -2107,3 +2154,4 @@
     </script>
 </body>
 </html>
+
