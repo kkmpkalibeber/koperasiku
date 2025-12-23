@@ -590,6 +590,9 @@
     </style>
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- jsPDF for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -962,6 +965,10 @@
             loadData();
             setDefaultDates();
             updateLastUpdate();
+            
+            // Set event listeners untuk tombol
+            document.querySelector('button[onclick="loadLaporan()"]').addEventListener('click', loadLaporan);
+            document.getElementById('exportBtn').addEventListener('click', exportLaporan);
         });
         
         function showTab(tabName) {
@@ -991,7 +998,7 @@
                     break;
                 case 'laporan':
                     loadSaldo();
-                    loadLaporan();
+                    loadLaporan(); // PERBAIKAN: Panggil loadLaporan() di sini
                     break;
             }
             
@@ -1412,7 +1419,7 @@
                 
                 select.appendChild(option);
                 
-                // Untuk filter laporan
+                // Untuk filter 
                 const filterOption = document.createElement('option');
                 filterOption.value = jenis.id;
                 filterOption.textContent = `${jenis.nama_jenis}`;
@@ -1578,6 +1585,20 @@
             const filterJenis = document.getElementById('filterJenis').value;
             const filterAnggota = document.getElementById('filterAnggota').value;
             
+            // Validasi tanggal wajib - PERBAIKAN: Validasi ditambahkan
+            if (!fromDate || !toDate) {
+                showMessage('warning', 'Silakan pilih tanggal mulai dan tanggal akhir terlebih dahulu!');
+                return;
+            }
+            
+            // Validasi rentang tanggal
+            if (new Date(fromDate) > new Date(toDate)) {
+                showMessage('warning', 'Tanggal mulai tidak boleh lebih besar dari tanggal akhir!');
+                return;
+            }
+            
+            showMessage('info', 'Memuat data laporan...');
+            
             callAPI('laporan', {
                 from: fromDate,
                 to: toDate,
@@ -1589,7 +1610,16 @@
                     renderLaporanTable(laporanData);
                     
                     // Enable/disable export button
-                    document.getElementById('exportBtn').disabled = laporanData.length === 0;
+                    const exportBtn = document.getElementById('exportBtn');
+                    exportBtn.disabled = laporanData.length === 0;
+                    
+                    if (laporanData.length === 0) {
+                        showMessage('warning', 'Tidak ada transaksi pada periode yang dipilih');
+                    } else {
+                        showMessage('success', `Data laporan berhasil dimuat: ${laporanData.length} transaksi ditemukan`);
+                    }
+                } else {
+                    showMessage('error', 'Gagal memuat data laporan: ' + (data.error || 'Unknown error'));
                 }
             });
         }
@@ -1600,9 +1630,155 @@
                 return;
             }
             
-            // Simple print implementation
+            try {
+                // Periksa apakah jsPDF tersedia
+                if (typeof window.jspdf === 'undefined') {
+                    showMessage('error', 'Library PDF tidak tersedia. Pastikan jsPDF terinstall.');
+                    // Fallback: gunakan print biasa
+                    exportLaporanFallback();
+                    return;
+                }
+                
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('landscape', 'mm', 'a4');
+                
+                // Judul dan informasi
+                const title = "LAPORAN TRANSAKSI KOPERASI SEKOLAH";
+                const fromDate = document.getElementById('fromDate').value;
+                const toDate = document.getElementById('toDate').value;
+                const today = new Date().toLocaleDateString('id-ID');
+                
+                // Header
+                doc.setFontSize(16);
+                doc.setTextColor(44, 62, 80);
+                doc.text(title, doc.internal.pageSize.width / 2, 20, { align: 'center' });
+                
+                doc.setFontSize(10);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`Periode: ${formatDate(fromDate)} s/d ${formatDate(toDate)}`, doc.internal.pageSize.width / 2, 30, { align: 'center' });
+                doc.text(`Dibuat pada: ${today}`, doc.internal.pageSize.width / 2, 35, { align: 'center' });
+                
+                // Hitung total
+                let totalMasuk = 0;
+                let totalKeluar = 0;
+                laporanData.forEach(t => {
+                    const nilai = Number(t.nilai) || 0;
+                    if (t.kategori === 'masuk') totalMasuk += nilai;
+                    else totalKeluar += nilai;
+                });
+                const totalSaldo = totalMasuk - totalKeluar;
+                
+                // Siapkan data tabel
+                const tableData = laporanData.map(transaksi => [
+                    formatDate(transaksi.tanggal),
+                    transaksi.anggota_nama,
+                    transaksi.jenis_nama,
+                    transaksi.kategori === 'masuk' ? 'Pemasukan' : 'Pengeluaran',
+                    formatCurrency(transaksi.nilai),
+                    transaksi.keterangan || '-'
+                ]);
+                
+                // Tambahkan baris total
+                tableData.push([
+                    '',
+                    '',
+                    '',
+                    'TOTAL',
+                    formatCurrency(totalMasuk - totalKeluar),
+                    ''
+                ]);
+                
+                // Buat tabel dengan autoTable
+                doc.autoTable({
+                    head: [['Tanggal', 'Anggota', 'Jenis', 'Kategori', 'Jumlah', 'Keterangan']],
+                    body: tableData,
+                    startY: 45,
+                    theme: 'grid',
+                    styles: { 
+                        fontSize: 8, 
+                        cellPadding: 3,
+                        textColor: [50, 50, 50]
+                    },
+                    headStyles: { 
+                        fillColor: [44, 62, 80], 
+                        textColor: 255,
+                        fontStyle: 'bold'
+                    },
+                    bodyStyles: { 
+                        cellPadding: 3 
+                    },
+                    alternateRowStyles: { 
+                        fillColor: [245, 245, 245] 
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 25 }, // Tanggal
+                        1: { cellWidth: 35 }, // Anggota
+                        2: { cellWidth: 35 }, // Jenis
+                        3: { cellWidth: 25 }, // Kategori
+                        4: { cellWidth: 30 }, // Jumlah
+                        5: { cellWidth: 55 }  // Keterangan
+                    },
+                    margin: { top: 45 },
+                    didDrawPage: function(data) {
+                        // Footer dengan summary
+                        if (data.pageNumber === data.pageCount) {
+                            const finalY = data.cursor.y + 15;
+                            
+                            doc.setFontSize(10);
+                            doc.setTextColor(0, 0, 0);
+                            doc.setFont(undefined, 'bold');
+                            
+                            // Summary box
+                            doc.setDrawColor(44, 62, 80);
+                            doc.setFillColor(245, 245, 245);
+                            doc.rect(20, finalY, doc.internal.pageSize.width - 40, 40, 'FD');
+                            
+                            // Summary content
+                            doc.text('Ringkasan Laporan:', 25, finalY + 8);
+                            doc.setFont(undefined, 'normal');
+                            
+                            doc.text(`Total Pemasukan:`, 25, finalY + 18);
+                            doc.setTextColor(39, 174, 96);
+                            doc.text(`+ ${formatCurrency(totalMasuk)}`, doc.internal.pageSize.width - 25, finalY + 18, { align: 'right' });
+                            
+                            doc.setTextColor(0, 0, 0);
+                            doc.text(`Total Pengeluaran:`, 25, finalY + 26);
+                            doc.setTextColor(231, 76, 60);
+                            doc.text(`- ${formatCurrency(totalKeluar)}`, doc.internal.pageSize.width - 25, finalY + 26, { align: 'right' });
+                            
+                            doc.setFont(undefined, 'bold');
+                            doc.text(`Saldo Bersih:`, 25, finalY + 34);
+                            doc.setTextColor(totalSaldo >= 0 ? [39, 174, 96] : [231, 76, 60]);
+                            doc.text(`${formatCurrency(totalSaldo)}`, doc.internal.pageSize.width - 25, finalY + 34, { align: 'right' });
+                            
+                            // Footer note
+                            doc.setFontSize(8);
+                            doc.setTextColor(100, 100, 100);
+                            doc.text('Dibuat otomatis oleh Sistem Koperasi Sekolah', doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+                        }
+                    }
+                });
+                
+                // Simpan PDF
+                const fileName = `Laporan_Koperasi_${fromDate.replace(/-/g, '')}_${toDate.replace(/-/g, '')}.pdf`;
+                doc.save(fileName);
+                
+                showMessage('success', 'PDF berhasil di-generate dan diunduh!');
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                showMessage('error', 'Gagal membuat PDF: ' + error.message);
+                // Fallback ke metode print
+                exportLaporanFallback();
+            }
+        }
+        
+        function exportLaporanFallback() {
+            // Fallback method jika jsPDF gagal
             const printWindow = window.open('', '_blank');
             const today = new Date().toLocaleDateString('id-ID');
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
             
             let html = `
                 <!DOCTYPE html>
@@ -1611,23 +1787,36 @@
                     <title>Laporan Koperasi - ${today}</title>
                     <style>
                         body { font-family: Arial, sans-serif; margin: 20px; }
-                        h1 { color: #2c3e50; }
+                        h1 { color: #2c3e50; text-align: center; }
+                        h2 { color: #34495e; }
                         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
                         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-                        th { background-color: #f2f2f2; }
-                        .text-success { color: green; }
-                        .text-danger { color: red; }
-                        .total { font-weight: bold; margin-top: 20px; }
+                        th { background-color: #2c3e50; color: white; }
+                        .text-success { color: #27ae60; }
+                        .text-danger { color: #e74c3c; }
+                        .summary { margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px; }
+                        .summary-item { display: flex; justify-content: space-between; margin: 5px 0; }
+                        @media print {
+                            body { font-size: 12px; }
+                            button { display: none; }
+                        }
                     </style>
                 </head>
                 <body>
                     <h1>Laporan Transaksi Koperasi Sekolah</h1>
-                    <p>Tanggal: ${document.getElementById('fromDate').value} s/d ${document.getElementById('toDate').value}</p>
-                    <p>Dibuat pada: ${today}</p>
+                    <p style="text-align: center;">Periode: ${formatDate(fromDate)} s/d ${formatDate(toDate)}</p>
+                    <p style="text-align: center;">Dibuat pada: ${today}</p>
                     <hr>
+            `;
+            
+            if (laporanData.length === 0) {
+                html += `<p style="text-align: center; color: #7f8c8d;">Tidak ada data transaksi</p>`;
+            } else {
+                html += `
                     <table>
                         <thead>
                             <tr>
+                                <th>No</th>
                                 <th>Tanggal</th>
                                 <th>Anggota</th>
                                 <th>Jenis</th>
@@ -1637,55 +1826,77 @@
                             </tr>
                         </thead>
                         <tbody>
-            `;
-            
-            let totalMasuk = 0;
-            let totalKeluar = 0;
-            
-            laporanData.forEach(transaksi => {
-                const isMasuk = transaksi.kategori === 'masuk';
-                const nilai = Number(transaksi.nilai) || 0;
+                `;
                 
-                if (isMasuk) {
-                    totalMasuk += nilai;
-                } else {
-                    totalKeluar += nilai;
-                }
+                let totalMasuk = 0;
+                let totalKeluar = 0;
+                
+                laporanData.forEach((transaksi, index) => {
+                    const isMasuk = transaksi.kategori === 'masuk';
+                    const nilai = Number(transaksi.nilai) || 0;
+                    
+                    if (isMasuk) {
+                        totalMasuk += nilai;
+                    } else {
+                        totalKeluar += nilai;
+                    }
+                    
+                    html += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${transaksi.tanggal}</td>
+                            <td>${transaksi.anggota_nama}</td>
+                            <td>${transaksi.jenis_nama}</td>
+                            <td>${isMasuk ? 'Pemasukan' : 'Pengeluaran'}</td>
+                            <td class="${isMasuk ? 'text-success' : 'text-danger'}">
+                                ${isMasuk ? '+' : '-'} ${formatCurrency(nilai)}
+                            </td>
+                            <td>${transaksi.keterangan || '-'}</td>
+                        </tr>
+                    `;
+                });
+                
+                const totalSaldo = totalMasuk - totalKeluar;
                 
                 html += `
-                    <tr>
-                        <td>${transaksi.tanggal}</td>
-                        <td>${transaksi.anggota_nama}</td>
-                        <td>${transaksi.jenis_nama}</td>
-                        <td>${transaksi.kategori}</td>
-                        <td class="${isMasuk ? 'text-success' : 'text-danger'}">
-                            ${isMasuk ? '+' : '-'} ${formatCurrency(nilai)}
-                        </td>
-                        <td>${transaksi.keterangan || '-'}</td>
-                    </tr>
-                `;
-            });
-            
-            const totalSaldo = totalMasuk - totalKeluar;
-            
-            html += `
                         </tbody>
                     </table>
-                    <div class="total">
-                        <p>Total Pemasukan: <span class="text-success">${formatCurrency(totalMasuk)}</span></p>
-                        <p>Total Pengeluaran: <span class="text-danger">${formatCurrency(totalKeluar)}</span></p>
-                        <p>Saldo Bersih: <span style="color: ${totalSaldo >= 0 ? 'green' : 'red'}">${formatCurrency(totalSaldo)}</span></p>
+                    
+                    <div class="summary">
+                        <h2>Ringkasan</h2>
+                        <div class="summary-item">
+                            <span>Total Pemasukan:</span>
+                            <span class="text-success">${formatCurrency(totalMasuk)}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span>Total Pengeluaran:</span>
+                            <span class="text-danger">${formatCurrency(totalKeluar)}</span>
+                        </div>
+                        <div class="summary-item" style="font-weight: bold; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px;">
+                            <span>Saldo Bersih:</span>
+                            <span style="color: ${totalSaldo >= 0 ? '#27ae60' : '#e74c3c'}">
+                                ${formatCurrency(totalSaldo)}
+                            </span>
+                        </div>
                     </div>
-                    <p style="margin-top: 30px; font-style: italic;">
+                `;
+            }
+            
+            html += `
+                    <p style="margin-top: 40px; font-style: italic; text-align: center;">
                         Laporan ini dibuat otomatis oleh Sistem Koperasi Sekolah
                     </p>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button onclick="window.print()" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            Cetak Laporan
+                        </button>
+                    </div>
                 </body>
                 </html>
             `;
             
             printWindow.document.write(html);
             printWindow.document.close();
-            printWindow.print();
         }
         
         function renderSaldoTable(data) {
@@ -1774,15 +1985,18 @@
             // Add summary row
             const summaryRow = document.createElement('tr');
             summaryRow.style.backgroundColor = '#f8f9fa';
+            summaryRow.style.fontWeight = 'bold';
+            const totalSaldo = totalMasuk - totalKeluar;
+            
             summaryRow.innerHTML = `
                 <td colspan="3"><strong>Total</strong></td>
                 <td></td>
                 <td colspan="2">
-                    <div class="d-flex justify-between">
+                    <div class="d-flex justify-between align-center">
                         <span class="text-success">Pemasukan: ${formatCurrency(totalMasuk)}</span>
                         <span class="text-danger">Pengeluaran: ${formatCurrency(totalKeluar)}</span>
-                        <span style="color: ${totalMasuk - totalKeluar >= 0 ? '#27ae60' : '#e74c3c'}">
-                            Saldo: ${formatCurrency(totalMasuk - totalKeluar)}
+                        <span style="color: ${totalSaldo >= 0 ? '#27ae60' : '#e74c3c'}">
+                            Saldo: ${formatCurrency(totalSaldo)}
                         </span>
                     </div>
                 </td>
@@ -1797,11 +2011,6 @@
             document.getElementById('totalAnggota').textContent = anggotaData.length;
             document.getElementById('totalTransaksi').textContent = transaksiData.length;
             document.getElementById('totalJenis').textContent = jenisTransaksiData.length;
-            
-            // Calculate today's transactions
-            const today = new Date().toISOString().split('T')[0];
-            const todayTransactions = transaksiData.filter(t => t.tanggal === today).length;
-            document.getElementById('todayDate').textContent = formatDate(today);
             
             // Calculate total balance
             let totalSaldo = 0;
